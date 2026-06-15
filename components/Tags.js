@@ -3,23 +3,23 @@ import Link from 'next/link'
 const Tags = ({ tags, currentTag }) => {
   if (!tags) return null
   return (
-    <div className="tag-container">
-      <ul className="flex max-w-full mt-4 overflow-x-auto">
+    <div className="tag-container -mx-1">
+      <ul className="flex max-w-full gap-2 overflow-x-auto px-1 py-4">
         {Object.keys(tags).map(key => {
           const selected = key === currentTag
           return (
             <li
               key={key}
-              className={`mr-3 font-medium border whitespace-nowrap dark:text-gray-300 ${
+              className={`whitespace-nowrap rounded-md border text-sm font-medium transition-colors ${
                 selected
-                  ? 'text-white bg-black border-black dark:bg-gray-600 dark:border-gray-600'
-                  : 'bg-gray-100 border-gray-100 text-gray-400 dark:bg-night dark:border-gray-800'
+                  ? 'border-gray-950 bg-gray-950 text-white dark:border-gray-100 dark:bg-gray-100 dark:text-gray-950'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-950 dark:border-gray-800 dark:bg-night dark:text-gray-400 dark:hover:border-gray-700 dark:hover:bg-gray-900 dark:hover:text-gray-100'
               }`}
             >
               <Link
                 key={key}
                 href={selected ? '/search' : `/tag/${encodeURIComponent(key)}`}
-                className="px-4 py-2 block"
+                className="block px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               >
                 {`${key} (${tags[key]})`}
               </Link>

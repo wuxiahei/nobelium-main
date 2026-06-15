@@ -25,36 +25,39 @@ export default function Post (props) {
   const { dark } = useTheme()
 
   return (
-    <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
+    <article className={cn('flex flex-col pb-2', fullWidth ? 'md:px-24' : 'items-center')}>
       <h1 className={cn(
-        'w-full font-bold text-3xl text-black dark:text-white',
-        { 'max-w-2xl px-4': !fullWidth }
+        'w-full text-3xl font-bold leading-tight text-gray-950 dark:text-white md:text-4xl',
+        { 'max-w-3xl px-4 sm:px-6': !fullWidth }
       )}>
         {post.title}
       </h1>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
-          'w-full flex mt-7 items-start text-gray-500 dark:text-gray-400',
-          { 'max-w-2xl px-4': !fullWidth }
+          'mt-5 flex w-full flex-wrap items-center gap-x-2 gap-y-3 text-sm text-gray-500 dark:text-gray-400',
+          { 'max-w-3xl px-4 sm:px-6': !fullWidth }
         )}>
-          <div className="flex mb-4">
-            <a href={BLOG.socialLink || '#'} className="flex">
+          <div className="flex items-center">
+            <a
+              href={BLOG.socialLink || '#'}
+              className="inline-flex items-center rounded-md transition-colors hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:hover:text-gray-100"
+            >
               <Image
                 alt={BLOG.author}
-                width={24}
-                height={24}
+                width={28}
+                height={28}
                 src={`https://gravatar.com/avatar/${emailHash}`}
-                className="rounded-full"
+                className="rounded-full ring-1 ring-gray-200 dark:ring-gray-700"
               />
               <p className="ml-2 md:block">{BLOG.author}</p>
             </a>
-            <span className="block">&nbsp;/&nbsp;</span>
+            <span className="ml-2 text-gray-300 dark:text-gray-700">/</span>
           </div>
-          <div className="mr-2 mb-4 md:ml-0">
+          <div>
             <FormattedDate date={post.date} />
           </div>
           {post.tags && (
-            <div className="flex flex-nowrap max-w-full overflow-x-auto article-tags">
+            <div className="article-tags flex max-w-full flex-wrap gap-y-1">
               {post.tags.map(tag => (
                 <TagItem key={tag} tag={tag} />
               ))}
@@ -62,15 +65,15 @@ export default function Post (props) {
           )}
         </nav>
       )}
-      <div className="self-stretch -mt-4 flex flex-col items-center lg:flex-row lg:items-stretch">
+      <div className="mt-6 flex self-stretch flex-col items-center lg:flex-row lg:items-start">
         {!fullWidth && <div className="flex-1 hidden lg:block" />}
-        <div className={fullWidth ? 'flex-1 pr-4' : 'flex-none w-full max-w-2xl px-4'}>
+        <div className={fullWidth ? 'flex-1 pr-4' : 'w-full max-w-3xl flex-none px-4 sm:px-6'}>
           <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />
         </div>
-        <div className={cn('order-first lg:order-[unset] w-full lg:w-auto max-w-2xl lg:max-w-[unset] lg:min-w-[160px]', fullWidth ? 'flex-none' : 'flex-1')}>
+        <div className={cn('hidden w-full max-w-3xl lg:block lg:w-auto lg:max-w-[unset] lg:min-w-[180px]', fullWidth ? 'flex-none' : 'flex-1')}>
           {/* `65px` is the height of expanded nav */}
           {/* TODO: Remove the magic number */}
-          <TableOfContents blockMap={blockMap} className="pt-3 sticky" style={{ top: '65px' }} />
+          <TableOfContents blockMap={blockMap} className="sticky pt-2" style={{ top: '76px' }} />
         </div>
       </div>
     </article>

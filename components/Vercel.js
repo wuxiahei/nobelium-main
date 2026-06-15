@@ -12,7 +12,7 @@ const Vercel = () => {
         viewBox="0 0 135 28"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="inline-block"
+        className="inline-block opacity-70 transition-opacity hover:opacity-100"
       >
         <g clipPath="url(#clip0)">
           <path

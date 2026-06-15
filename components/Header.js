@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/router'
 import { useConfig } from '@/lib/config'
 import { useLocale } from '@/lib/locale'
 import useTheme from '@/lib/theme'
@@ -8,25 +9,45 @@ import useTheme from '@/lib/theme'
 const NavBar = () => {
   const BLOG = useConfig()
   const locale = useLocale()
+  const router = useRouter()
   const links = [
     { id: 0, name: locale.NAV.INDEX, to: BLOG.path || '/', show: true },
     { id: 1, name: locale.NAV.ABOUT, to: '/about', show: BLOG.showAbout },
     { id: 2, name: locale.NAV.RSS, to: '/feed', show: true, external: true },
     { id: 3, name: locale.NAV.SEARCH, to: '/search', show: true }
   ]
+  const currentPath = router.asPath.split('?')[0].split('#')[0]
+
   return (
     <div className="flex-shrink-0">
-      <ul className="flex flex-row">
+      <ul className="flex flex-row items-center gap-1 sm:gap-2">
         {links.map(
-          link =>
-            link.show && (
-              <li
-                key={link.id}
-                className="block ml-4 text-black dark:text-gray-50 nav"
-              >
-                <Link href={link.to} target={link.external ? '_blank' : null}>{link.name}</Link>
-              </li>
+          link => {
+            const active = !link.external && (
+              currentPath === link.to ||
+              (link.to === '/search' && router.pathname === '/tag/[tag]')
             )
+
+            return (
+              link.show && (
+                <li key={link.id} className="block nav">
+                  <Link
+                    href={link.to}
+                    target={link.external ? '_blank' : undefined}
+                    rel={link.external ? 'noreferrer' : undefined}
+                    aria-current={active ? 'page' : undefined}
+                    className={`block rounded-md px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
+                      active
+                        ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-950'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              )
+            )
+          }
         )}
       </ul>
     </div>
@@ -85,8 +106,8 @@ export default function Header ({ navBarTitle, fullWidth }) {
     <>
       <div className="observer-element h-4 md:h-12" ref={sentinelRef}></div>
       <div
-        className={`sticky-nav group m-auto w-full h-6 flex flex-row justify-between items-center mb-2 md:mb-12 py-8 bg-opacity-60 ${
-          !fullWidth ? 'max-w-3xl px-4' : 'px-4 md:px-24'
+        className={`sticky-nav group m-auto mb-4 flex h-16 w-full flex-row items-center justify-between bg-day/75 py-4 dark:bg-night/75 md:mb-12 ${
+          !fullWidth ? 'max-w-3xl px-4 sm:px-6' : 'px-4 md:px-24'
         }`}
         id="sticky-nav"
         ref={navRef}
@@ -101,8 +122,12 @@ export default function Header ({ navBarTitle, fullWidth }) {
             className="fill-black dark:fill-white"
           />
         </svg>
-        <div className="flex items-center">
-          <Link href="/" aria-label={BLOG.title}>
+        <div className="flex min-w-0 items-center">
+          <Link
+            href={BLOG.path || '/'}
+            aria-label={BLOG.title}
+            className="rounded-md transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500"
+          >
             <Image
               src={favicon}
               width={24}
@@ -129,13 +154,13 @@ const HeaderName = forwardRef(function HeaderName ({ siteTitle, siteDescription,
   return (
     <p
       ref={ref}
-      className="header-name ml-2 font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-center"
+      className="header-name ml-3 min-w-0 font-medium text-gray-700 dark:text-gray-200 capture-pointer-events grid-rows-1 grid-cols-1 items-center"
       onClick={onClick}
     >
-      {postTitle && <span className="post-title row-start-1 col-start-1">{postTitle}</span>}
-      <span className="row-start-1 col-start-1">
+      {postTitle && <span className="post-title row-start-1 col-start-1 truncate">{postTitle}</span>}
+      <span className="row-start-1 col-start-1 truncate">
         <span className="site-title">{siteTitle}</span>
-        <span className="site-description font-normal">, {siteDescription}</span>
+        <span className="site-description font-normal text-gray-500 dark:text-gray-400">, {siteDescription}</span>
       </span>
     </p>
   )

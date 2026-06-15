@@ -40,29 +40,29 @@ export default function BlogPost ({ post, blockMap, emailHash }) {
       {/* Back and Top */}
       <div
         className={cn(
-          'px-4 flex justify-between font-medium text-gray-500 dark:text-gray-400 my-5',
-          fullWidth ? 'md:px-24' : 'mx-auto max-w-2xl'
+          'mx-auto my-8 flex justify-between px-4 text-sm font-medium text-gray-500 dark:text-gray-500',
+          fullWidth ? 'md:px-24' : 'max-w-3xl sm:px-6'
         )}
       >
-        <a>
-          <button
-            onClick={() => router.push(BLOG.path || '/')}
-            className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100"
-          >
-            ← {locale.POST.BACK}
-          </button>
-        </a>
-        <a>
-          <button
-            onClick={() => window.scrollTo({
-              top: 0,
-              behavior: 'smooth'
-            })}
-            className="mt-2 cursor-pointer hover:text-black dark:hover:text-gray-100"
-          >
-            ↑ {locale.POST.TOP}
-          </button>
-        </a>
+        <button
+          type="button"
+          onClick={() => router.push(BLOG.path || '/')}
+          className="inline-flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-gray-100 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:hover:bg-gray-900 dark:hover:text-gray-100"
+        >
+          <span aria-hidden="true">&larr;</span>
+          {locale.POST.BACK}
+        </button>
+        <button
+          type="button"
+          onClick={() => window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          })}
+          className="inline-flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-gray-100 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:hover:bg-gray-900 dark:hover:text-gray-100"
+        >
+          <span aria-hidden="true">&uarr;</span>
+          {locale.POST.TOP}
+        </button>
       </div>
 
       <Comments frontMatter={post} />

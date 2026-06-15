@@ -1,22 +1,24 @@
 import { useConfig } from '@/lib/config'
 import Vercel from '@/components/Vercel'
+
 const Footer = ({ fullWidth }) => {
   const BLOG = useConfig()
 
   const d = new Date()
   const y = d.getFullYear()
   const from = +BLOG.since
+
   return (
     <div
-      className={`mt-6 flex-shrink-0 m-auto w-full text-gray-500 dark:text-gray-400 transition-all ${
-        !fullWidth ? 'max-w-2xl px-4' : 'px-4 md:px-24'
+      className={`m-auto mt-10 w-full flex-shrink-0 text-gray-500 transition-all dark:text-gray-500 ${
+        !fullWidth ? 'max-w-3xl px-4 sm:px-6' : 'px-4 md:px-24'
       }`}
     >
-      <hr className="border-gray-200 dark:border-gray-600" />
-      <div className="my-4 text-sm leading-6">
-        <div className="flex align-baseline justify-between flex-wrap">
+      <hr className="border-gray-200 dark:border-gray-800" />
+      <div className="my-5 text-sm leading-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p>
-            © {BLOG.author} {from === y || !from ? y : `${from} - ${y}`}
+            &copy; {BLOG.author} {from === y || !from ? y : `${from} - ${y}`}
           </p>
           <Vercel />
         </div>

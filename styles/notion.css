@@ -51,7 +51,8 @@
 }
 
 .notion {
-  @apply text-gray-600 dark:text-gray-300;
+  @apply text-gray-700 dark:text-gray-300;
+  font-size: 1rem;
   overflow-wrap: break-word;
 }
 .notion,
@@ -61,6 +62,19 @@
   @apply p-0;
   @apply my-3;
   line-height: var(--no-leading);
+}
+.notion-h {
+  @apply font-semibold text-gray-950 dark:text-gray-50;
+  scroll-margin-top: 5rem;
+}
+.notion-h1 {
+  @apply mt-10 mb-4 text-2xl;
+}
+.notion-h2 {
+  @apply mt-9 mb-3 text-xl;
+}
+.notion-h3 {
+  @apply mt-8 mb-2 text-lg;
 }
 .notion-page-link {
   color: inherit;
@@ -72,6 +86,10 @@ svg.notion-page-icon {
 
 svg + .notion-page-title-text {
   @apply border-b-0;
+}
+
+.notion-callout {
+  @apply rounded-md border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-zinc-900;
 }
 
 .notion-callout > .notion-page-icon-inline {
@@ -92,8 +110,7 @@ svg + .notion-page-title-text {
 }
 
 .notion-bookmark {
-  @apply border;
-  @apply border-gray-100;
+  @apply rounded-md border border-gray-200 bg-white transition-colors dark:border-gray-800 dark:bg-zinc-900;
   color: inherit;
 }
 
@@ -108,10 +125,11 @@ svg + .notion-page-title-text {
 
 pre[class*='language-'] {
   line-height: inherit;
+  @apply rounded-md;
 }
 
 .notion-bookmark:hover {
-  @apply border-blue-400;
+  @apply border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-zinc-800;
 }
 .notion-viewport {
   z-index: -10;
@@ -131,6 +149,7 @@ pre[class*='language-'] {
   @apply px-0;
 }
 .notion-quote {
+  @apply border-l-2 border-gray-300 text-gray-700 dark:border-gray-700 dark:text-gray-300;
   padding: 0.2em 0.9em;
 }
 .notion-hr {
@@ -183,6 +202,18 @@ pre[class*='language-'] {
   padding-right: 2px;
 }
 
+.notion-inline-code {
+  @apply rounded bg-gray-100 px-1.5 py-0.5 text-red-700 dark:bg-gray-800 dark:text-red-300;
+}
+
+.notion-code {
+  @apply rounded-md border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-zinc-950;
+}
+
+.notion-asset-wrapper img {
+  @apply rounded-md;
+}
+
 /* Every block */
 
 .nobelium-block {
@@ -205,7 +236,7 @@ pre[class*='language-'] {
 }
 
 .nobelium-toggle > summary {
-  @apply cursor-pointer flex items-start;
+  @apply flex cursor-pointer items-start rounded-md transition-colors hover:bg-gray-50 dark:hover:bg-gray-900;
 }
 
 .nobelium-toggle-empty > summary {
