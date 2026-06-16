@@ -5,6 +5,7 @@ import { getTextContent } from 'notion-utils'
 import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import { useConfig } from '@/lib/config'
 import Toggle from '@/components/notion-blocks/Toggle'
+import LazyRender from '@/components/LazyRender'
 
 const MermaidBlock = dynamic(() => {
   return import('@/components/notion-blocks/Mermaid').then(module => module.default)
@@ -17,6 +18,25 @@ const CodeBlock = dynamic(() => {
   return import('react-notion-x/third-party/code').then(module => module.Code)
 }, {
   loading: () => <CodeLoading label="Loading code..." />
+})
+
+const CollectionBlock = dynamic(() => {
+  return import('react-notion-x/third-party/collection').then(module => module.Collection)
+}, {
+  loading: () => <CodeLoading label="Loading collection..." />
+})
+
+const EquationBlock = dynamic(() => {
+  return import('react-notion-x/third-party/equation').then(module => module.Equation)
+}, {
+  loading: () => <CodeLoading label="Loading equation..." />
+})
+
+const PdfBlock = dynamic(() => {
+  return import('react-notion-x/third-party/pdf').then(module => module.Pdf)
+}, {
+  ssr: false,
+  loading: () => <CodeLoading label="Loading PDF..." />
 })
 
 const prismLanguageCache = new Map()
@@ -90,6 +110,18 @@ function CodeLoading ({ label }) {
   )
 }
 
+function LazyBlock ({ children, label, minHeight = 160 }) {
+  return (
+    <LazyRender
+      minHeight={minHeight}
+      rootMargin="280px 0px"
+      placeholder={<CodeLoading label={label} />}
+    >
+      {children}
+    </LazyRender>
+  )
+}
+
 function CodeSwitch (props) {
   const language = props.block?.properties?.language
     ? getTextContent(props.block.properties.language)
@@ -130,23 +162,33 @@ const components = {
   // Code block
   Code: CodeSwitch,
   // Database block
-  Collection: dynamic(() => {
-    return import('react-notion-x/third-party/collection').then(module => module.Collection)
-  }),
+  Collection: props => (
+    <LazyBlock label="Loading collection..." minHeight={220}>
+      <CollectionBlock {...props} />
+    </LazyBlock>
+  ),
   // Equation block & inline variant
-  Equation: dynamic(() => {
-    return import('react-notion-x/third-party/equation').then(module => module.Equation)
-  }),
+  Equation: props => (
+    <LazyBlock label="Loading equation..." minHeight={96}>
+      <EquationBlock {...props} />
+    </LazyBlock>
+  ),
   // PDF (Embed block)
-  Pdf: dynamic(() => {
-    return import('react-notion-x/third-party/pdf').then(module => module.Pdf)
-  }, { ssr: false }),
+  Pdf: props => (
+    <LazyBlock label="Loading PDF..." minHeight={240}>
+      <PdfBlock {...props} />
+    </LazyBlock>
+  ),
   // Tweet block
   Tweet: dynamic(() => {
     return import('react-tweet-embed').then(module => {
       const { default: TweetEmbed } = module
       return function Tweet ({ id }) {
-        return <TweetEmbed tweetId={id} options={{ theme: 'dark' }} />
+        return (
+          <LazyBlock label="Loading tweet..." minHeight={220}>
+            <TweetEmbed tweetId={id} options={{ theme: 'dark' }} />
+          </LazyBlock>
+        )
       }
     })
   }),

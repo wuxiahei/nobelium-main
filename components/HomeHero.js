@@ -4,32 +4,23 @@ export default function HomeHero ({ postCount }) {
   const BLOG = useConfig()
 
   return (
-    <section className="home-hero mb-8 overflow-hidden rounded-[2rem] border border-white/70 bg-white/65 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/55 dark:shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-8">
-      <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-2xl">
-          <p className="mb-4 inline-flex rounded-full border border-teal-200/70 bg-teal-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-teal-800 dark:border-teal-300/20 dark:bg-teal-300/10 dark:text-teal-100">
-            Ely&apos;s blog
+    <section className="home-hero exhibition-hero mb-12 pt-4">
+      <div className="max-w-3xl">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.34em] text-stone-500 dark:text-stone-400">
+          Selected Writings
+        </p>
+        <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-gray-950 dark:text-white sm:text-5xl md:text-6xl">
+          {BLOG.title}
+        </h1>
+        {BLOG.description && (
+          <p className="mt-5 max-w-2xl text-[1.04rem] leading-8 text-stone-600 dark:text-stone-300 md:text-lg">
+            {BLOG.description}
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-gray-950 dark:text-white sm:text-5xl">
-            {BLOG.title}
-          </h1>
-          {BLOG.description && (
-            <p className="mt-4 max-w-xl text-base leading-8 text-gray-600 dark:text-gray-300 sm:text-lg">
-              {BLOG.description}
-            </p>
-          )}
-        </div>
-        <div className="hero-signature" aria-hidden="true">
-          <span>Ely</span>
-        </div>
+        )}
       </div>
-      <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
-        <span className="rounded-full bg-white/70 px-3 py-1.5 ring-1 ring-gray-200/80 dark:bg-white/5 dark:ring-white/10">
-          {postCount} posts
-        </span>
-        <span className="rounded-full bg-white/70 px-3 py-1.5 ring-1 ring-gray-200/80 dark:bg-white/5 dark:ring-white/10">
-          Notes, ideas, and experiments
-        </span>
+      <div className="mt-8 grid gap-2 text-sm text-stone-500 dark:text-stone-400 md:grid-cols-[160px_minmax(0,1fr)]">
+        <span className="uppercase tracking-[0.18em]">Current archive</span>
+        <span>{postCount} texts, notes, and experiments</span>
       </div>
     </section>
   )

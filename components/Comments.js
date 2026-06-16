@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import cn from 'classnames'
 import { fetchCusdisLang } from '@/lib/cusdisLang'
 import { useConfig } from '@/lib/config'
+import LazyRender from '@/components/LazyRender'
 
 const GitalkComponent = dynamic(
   () => {
@@ -37,36 +38,43 @@ const Comments = ({ frontMatter }) => {
         fullWidth ? 'md:px-24' : 'mx-auto max-w-3xl sm:px-6',
       )}
     >
-      {BLOG.comment && BLOG.comment.provider === 'gitalk' && (
-        <GitalkComponent
-          options={{
-            id: frontMatter.id,
-            title: frontMatter.title,
-            clientID: BLOG.comment.gitalkConfig.clientID,
-            clientSecret: BLOG.comment.gitalkConfig.clientSecret,
-            repo: BLOG.comment.gitalkConfig.repo,
-            owner: BLOG.comment.gitalkConfig.owner,
-            admin: BLOG.comment.gitalkConfig.admin,
-            distractionFreeMode: BLOG.comment.gitalkConfig.distractionFreeMode
-          }}
-        />
-      )}
-      {BLOG.comment && BLOG.comment.provider === 'utterances' && (
-        <UtterancesComponent issueTerm={frontMatter.id} />
-      )}
-      {BLOG.comment && BLOG.comment.provider === 'cusdis' && (
-        <CusdisComponent
-          lang={fetchCusdisLang(BLOG.lang)}
-          attrs={{
-            host: BLOG.comment.cusdisConfig.host,
-            appId: BLOG.comment.cusdisConfig.appId,
-            pageId: frontMatter.id,
-            pageTitle: frontMatter.title,
-            pageUrl: BLOG.link + router.asPath,
-            theme: BLOG.appearance
-          }}
-        />
-      )}
+      <LazyRender
+        minHeight={160}
+        placeholder={<div className="rounded-xl border border-gray-200/80 bg-white/50 px-4 py-6 text-sm dark:border-gray-800 dark:bg-white/5">Comments load when you scroll here.</div>}
+      >
+        <>
+          {BLOG.comment && BLOG.comment.provider === 'gitalk' && (
+            <GitalkComponent
+              options={{
+                id: frontMatter.id,
+                title: frontMatter.title,
+                clientID: BLOG.comment.gitalkConfig.clientID,
+                clientSecret: BLOG.comment.gitalkConfig.clientSecret,
+                repo: BLOG.comment.gitalkConfig.repo,
+                owner: BLOG.comment.gitalkConfig.owner,
+                admin: BLOG.comment.gitalkConfig.admin,
+                distractionFreeMode: BLOG.comment.gitalkConfig.distractionFreeMode
+              }}
+            />
+          )}
+          {BLOG.comment && BLOG.comment.provider === 'utterances' && (
+            <UtterancesComponent issueTerm={frontMatter.id} />
+          )}
+          {BLOG.comment && BLOG.comment.provider === 'cusdis' && (
+            <CusdisComponent
+              lang={fetchCusdisLang(BLOG.lang)}
+              attrs={{
+                host: BLOG.comment.cusdisConfig.host,
+                appId: BLOG.comment.cusdisConfig.appId,
+                pageId: frontMatter.id,
+                pageTitle: frontMatter.title,
+                pageUrl: BLOG.link + router.asPath,
+                theme: BLOG.appearance
+              }}
+            />
+          )}
+        </>
+      </LazyRender>
     </div>
   )
 }

@@ -28,9 +28,9 @@ export default function Post (props) {
 
   if (isAboutPage) {
     return (
-      <article className="flex flex-col pb-2">
+      <article className="book-page flex flex-col pb-2">
         <AboutResume post={post} emailHash={emailHash} />
-        <div className="resume-content mt-8 w-full self-center px-4 sm:px-6 md:max-w-3xl">
+        <div className="resume-content mt-10 w-full self-center px-4 sm:px-6 md:max-w-3xl">
           <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />
         </div>
       </article>
@@ -38,33 +38,35 @@ export default function Post (props) {
   }
 
   return (
-    <article className={cn('flex flex-col pb-2', fullWidth ? 'md:px-24' : 'items-center')}>
-      <h1 className={cn(
-        'w-full text-3xl font-bold leading-tight text-gray-950 dark:text-white md:text-4xl',
-        { 'max-w-3xl px-4 sm:px-6': !fullWidth }
-      )}>
-        {post.title}
-      </h1>
+    <article className={cn('book-page flex flex-col pb-2', fullWidth ? 'md:px-24' : 'items-center')}>
+      <div className={cn('w-full', { 'max-w-3xl px-4 sm:px-6': !fullWidth })}>
+        <p className="mb-4 text-xs uppercase tracking-[0.34em] text-stone-400 dark:text-stone-500">
+          Chapter
+        </p>
+        <h1 className="w-full text-3xl font-semibold leading-tight tracking-[-0.03em] text-gray-950 dark:text-white md:text-[3rem]">
+          {post.title}
+        </h1>
+      </div>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
-          'mt-5 flex w-full flex-wrap items-center gap-x-2 gap-y-3 text-sm text-gray-500 dark:text-gray-400',
+          'mt-6 flex w-full flex-wrap items-center gap-x-3 gap-y-3 text-sm text-stone-500 dark:text-stone-400',
           { 'max-w-3xl px-4 sm:px-6': !fullWidth }
         )}>
           <div className="flex items-center">
             <a
               href={BLOG.socialLink || '#'}
-              className="inline-flex items-center rounded-md transition-colors hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:hover:text-gray-100"
+              className="inline-flex items-center rounded-md transition-colors hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 dark:hover:text-gray-100"
             >
               <Image
                 alt={BLOG.author}
                 width={28}
                 height={28}
                 src={`https://gravatar.com/avatar/${emailHash}`}
-                className="rounded-full ring-1 ring-gray-200 dark:ring-gray-700"
+                className="rounded-full ring-1 ring-stone-200 dark:ring-stone-700"
               />
               <p className="ml-2 md:block">{BLOG.author}</p>
             </a>
-            <span className="ml-2 text-gray-300 dark:text-gray-700">/</span>
+            <span className="ml-2 text-stone-300 dark:text-stone-700">/</span>
           </div>
           <div>
             <FormattedDate date={post.date} />
@@ -78,9 +80,9 @@ export default function Post (props) {
           )}
         </nav>
       )}
-      <div className="mt-6 flex self-stretch flex-col items-center lg:flex-row lg:items-start">
+      <div className="mt-10 flex self-stretch flex-col items-center lg:flex-row lg:items-start">
         {!fullWidth && <div className="flex-1 hidden lg:block" />}
-        <div className={fullWidth ? 'flex-1 pr-4' : 'w-full max-w-3xl flex-none px-4 sm:px-6'}>
+        <div className={fullWidth ? 'flex-1 pr-4' : 'book-sheet w-full max-w-3xl flex-none px-5 py-8 sm:px-8'}>
           <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />
         </div>
         <div className={cn('hidden w-full max-w-3xl lg:block lg:w-auto lg:max-w-[unset] lg:min-w-[180px]', fullWidth ? 'flex-none' : 'flex-1')}>

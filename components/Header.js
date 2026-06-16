@@ -33,10 +33,10 @@ const NavBar = () => {
                     target={link.external ? '_blank' : undefined}
                     rel={link.external ? 'noreferrer' : undefined}
                     aria-current={active ? 'page' : undefined}
-                    className={`block rounded-md px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
+                    className={`block rounded-md px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 ${
                       active
-                        ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-950'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
+                        ? 'bg-gray-950 text-white dark:bg-white dark:text-gray-950'
+                        : 'text-gray-600 hover:bg-stone-100 hover:text-black dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white'
                     }`}
                   >
                     {link.name}
@@ -110,9 +110,9 @@ export default function Header ({ navBarTitle, fullWidth }) {
           <Link
             href={BLOG.path || '/'}
             aria-label={BLOG.title}
-            className="ely-brand rounded-full transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-500"
+            className="ely-brand transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-500"
           >
-            <span aria-hidden="true">Ely</span>
+            <span aria-hidden="true">E</span>
           </Link>
           <HeaderName
             ref={titleRef}
