@@ -10,7 +10,7 @@ import Container from '@/components/Container'
 import Post from '@/components/Post'
 import Comments from '@/components/Comments'
 
-export default function BlogPost ({ post, blockMap, emailHash }) {
+export default function BlogPost ({ post, blockMap, emailHash, previousPost, nextPost }) {
   const router = useRouter()
   const BLOG = useConfig()
   const locale = useLocale()
@@ -35,6 +35,8 @@ export default function BlogPost ({ post, blockMap, emailHash }) {
         blockMap={blockMap}
         emailHash={emailHash}
         fullWidth={fullWidth}
+        previousPost={previousPost}
+        nextPost={nextPost}
       />
 
       {/* Back and Top */}
@@ -84,6 +86,11 @@ export async function getStaticProps ({ params: { slug } }) {
 
   if (!post) return { notFound: true }
 
+  const navigablePosts = posts.filter(item => item?.slug && item.slug !== 'about' && item.type?.[0] !== 'Page')
+  const currentIndex = navigablePosts.findIndex(item => item.slug === slug)
+  const previousPost = currentIndex >= 0 ? navigablePosts[currentIndex + 1] ?? null : null
+  const nextPost = currentIndex >= 0 ? navigablePosts[currentIndex - 1] ?? null : null
+
   const blockMap = await getPostBlocks(post.id)
   const emailHash = createHash('md5')
     .update(clientConfig.email)
@@ -92,7 +99,7 @@ export async function getStaticProps ({ params: { slug } }) {
     .toLowerCase()
 
   return {
-    props: { post, blockMap, emailHash },
+    props: { post, blockMap, emailHash, previousPost, nextPost },
     revalidate: 1
   }
 }

@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types'
-import Image from 'next/image'
+import Link from 'next/link'
 import cn from 'classnames'
 import { useConfig } from '@/lib/config'
+import { useLocale } from '@/lib/locale'
 import useTheme from '@/lib/theme'
 import FormattedDate from '@/components/FormattedDate'
 import TagItem from '@/components/TagItem'
@@ -22,9 +23,12 @@ import AboutResume from '@/components/AboutResume'
  */
 export default function Post (props) {
   const BLOG = useConfig()
-  const { post, blockMap, emailHash, fullWidth = false } = props
+  const locale = useLocale()
+  const { post, blockMap, emailHash, fullWidth = false, previousPost, nextPost } = props
   const { dark } = useTheme()
   const isAboutPage = post.slug === 'about'
+  const hasAdjacentPosts = previousPost || nextPost
+  const contentWidthClass = fullWidth ? 'w-full' : 'max-w-3xl px-4 sm:px-6'
 
   if (isAboutPage) {
     return (
@@ -50,24 +54,8 @@ export default function Post (props) {
       {post.type[0] !== 'Page' && (
         <nav className={cn(
           'mt-6 flex w-full flex-wrap items-center gap-x-3 gap-y-3 text-sm text-stone-500 dark:text-stone-400',
-          { 'max-w-3xl px-4 sm:px-6': !fullWidth }
+          contentWidthClass
         )}>
-          <div className="flex items-center">
-            <a
-              href={BLOG.socialLink || '#'}
-              className="inline-flex items-center rounded-md transition-colors hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 dark:hover:text-gray-100"
-            >
-              <Image
-                alt={BLOG.author}
-                width={28}
-                height={28}
-                src={`https://gravatar.com/avatar/${emailHash}`}
-                className="rounded-full ring-1 ring-stone-200 dark:ring-stone-700"
-              />
-              <p className="ml-2 md:block">{BLOG.author}</p>
-            </a>
-            <span className="ml-2 text-stone-300 dark:text-stone-700">/</span>
-          </div>
           <div>
             <FormattedDate date={post.date} />
           </div>
@@ -91,6 +79,32 @@ export default function Post (props) {
           <TableOfContents blockMap={blockMap} className="sticky pt-2" style={{ top: '76px' }} />
         </div>
       </div>
+      {hasAdjacentPosts && (
+        <div className={cn('mt-12 w-full border-t border-stone-200 pt-6 dark:border-stone-800', contentWidthClass)}>
+          <div className="grid gap-3 md:grid-cols-2">
+            {previousPost ? (
+              <AdjacentPostLink
+                href={`${BLOG.path || ''}/${previousPost.slug}`}
+                label={locale.PAGINATION.PREV}
+                title={previousPost.title}
+                align="left"
+              />
+            ) : (
+              <div className="hidden md:block" aria-hidden="true" />
+            )}
+            {nextPost ? (
+              <AdjacentPostLink
+                href={`${BLOG.path || ''}/${nextPost.slug}`}
+                label={locale.PAGINATION.NEXT}
+                title={nextPost.title}
+                align="right"
+              />
+            ) : (
+              <div className="hidden md:block" aria-hidden="true" />
+            )}
+          </div>
+        </div>
+      )}
     </article>
   )
 }
@@ -99,5 +113,26 @@ Post.propTypes = {
   post: PropTypes.object.isRequired,
   blockMap: PropTypes.object.isRequired,
   emailHash: PropTypes.string.isRequired,
-  fullWidth: PropTypes.bool
+  fullWidth: PropTypes.bool,
+  previousPost: PropTypes.object,
+  nextPost: PropTypes.object
+}
+
+function AdjacentPostLink ({ href, label, title, align }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'block rounded-lg border border-stone-200 bg-white/70 px-4 py-4 transition hover:border-stone-300 hover:bg-white dark:border-stone-800 dark:bg-white/[0.03] dark:hover:border-stone-700 dark:hover:bg-white/[0.05]',
+        align === 'right' && 'text-left md:text-right'
+      )}
+    >
+      <p className="text-[0.68rem] uppercase tracking-[0.22em] text-stone-400 dark:text-stone-500">
+        {label}
+      </p>
+      <p className="mt-2 text-base font-semibold leading-snug text-gray-950 dark:text-gray-50">
+        {title}
+      </p>
+    </Link>
+  )
 }

@@ -78,13 +78,13 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
         </div>
         {layout === 'blog' && <ReadingProgress />}
         <Header
-          navBarTitle={layout === 'blog' ? meta.title : null}
+          navBarTitle={null}
           headerMeta={headerMeta}
           fullWidth={fullWidth}
         />
         <main className={cn(
           'page-stage flex-grow transition-all',
-          layout !== 'blog' && ['self-center px-4 sm:px-6', fullWidth ? 'md:px-24' : 'w-full max-w-4xl']
+          layout !== 'blog' && ['self-center px-4 sm:px-6', fullWidth ? 'md:px-24' : 'w-full max-w-3xl']
         )}>
           {children}
         </main>
