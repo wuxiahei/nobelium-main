@@ -5,14 +5,7 @@ import Link from 'next/link'
 const BlogPost = ({ post }) => {
   const BLOG = useConfig()
   const summary = post.summary?.trim()
-  const normalizedSummary = summary?.toLowerCase()
-  const normalizedSlug = post.slug?.trim().toLowerCase()
-  const normalizedTitle = post.title?.trim().toLowerCase()
-  const shouldShowSummary = Boolean(
-    summary &&
-    normalizedSummary !== normalizedSlug &&
-    normalizedSummary !== normalizedTitle
-  )
+  const shouldShowSummary = isValidSummary(summary, post.title, post.slug)
 
   return (
     <Link
@@ -55,3 +48,22 @@ const BlogPost = ({ post }) => {
 }
 
 export default BlogPost
+
+function isValidSummary (summary, title, slug) {
+  if (!summary) return false
+
+  const normalizedSummary = summary.toLowerCase().trim()
+  const normalizedTitle = title?.toLowerCase().trim()
+  const normalizedSlug = slug?.toLowerCase().trim()
+
+  if (normalizedSummary === normalizedTitle || normalizedSummary === normalizedSlug) {
+    return false
+  }
+
+  const words = normalizedSummary.split(/\s+/).filter(Boolean)
+  if (words.length <= 1 && normalizedSummary.length <= 18) {
+    return false
+  }
+
+  return /[\s,.，。;；:：!?！？]/.test(summary) || normalizedSummary.length >= 24
+}
