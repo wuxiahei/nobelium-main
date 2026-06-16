@@ -1,4 +1,4 @@
-import { createElement as h } from 'react'
+import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { NotionRenderer as Renderer } from 'react-notion-x'
 import { getTextContent } from 'notion-utils'
@@ -6,67 +6,129 @@ import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import { useConfig } from '@/lib/config'
 import Toggle from '@/components/notion-blocks/Toggle'
 
+const MermaidBlock = dynamic(() => {
+  return import('@/components/notion-blocks/Mermaid').then(module => module.default)
+}, {
+  ssr: false,
+  loading: () => <CodeLoading label="Rendering diagram..." />
+})
+
+const CodeBlock = dynamic(() => {
+  return import('react-notion-x/third-party/code').then(module => module.Code)
+}, {
+  loading: () => <CodeLoading label="Loading code..." />
+})
+
+const prismLanguageCache = new Map()
+
+const prismLanguageLoaders = {
+  bash: () => import('prismjs/components/prism-bash'),
+  shell: () => import('prismjs/components/prism-bash'),
+  sh: () => import('prismjs/components/prism-bash'),
+  css: () => import('prismjs/components/prism-css'),
+  diff: () => import('prismjs/components/prism-diff'),
+  docker: () => import('prismjs/components/prism-docker'),
+  dockerfile: () => import('prismjs/components/prism-docker'),
+  html: () => import('prismjs/components/prism-markup'),
+  markup: () => import('prismjs/components/prism-markup'),
+  javascript: () => import('prismjs/components/prism-javascript'),
+  js: () => import('prismjs/components/prism-javascript'),
+  json: () => import('prismjs/components/prism-json'),
+  markdown: () => import('prismjs/components/prism-markdown'),
+  md: () => import('prismjs/components/prism-markdown'),
+  python: () => import('prismjs/components/prism-python'),
+  py: () => import('prismjs/components/prism-python'),
+  sql: () => import('prismjs/components/prism-sql'),
+  typescript: async () => {
+    await import('prismjs/components/prism-javascript')
+    return import('prismjs/components/prism-typescript')
+  },
+  ts: async () => {
+    await import('prismjs/components/prism-javascript')
+    return import('prismjs/components/prism-typescript')
+  },
+  jsx: async () => {
+    await import('prismjs/components/prism-markup')
+    await import('prismjs/components/prism-javascript')
+    return import('prismjs/components/prism-jsx')
+  },
+  tsx: async () => {
+    await import('prismjs/components/prism-markup')
+    await import('prismjs/components/prism-javascript')
+    await import('prismjs/components/prism-typescript')
+    await import('prismjs/components/prism-jsx')
+    return import('prismjs/components/prism-tsx')
+  },
+  yaml: () => import('prismjs/components/prism-yaml'),
+  yml: () => import('prismjs/components/prism-yaml')
+}
+
+function normalizeLanguage (language) {
+  return (language || '').toLowerCase().trim().replace(/^language-/, '')
+}
+
+function loadPrismLanguage (language) {
+  const normalized = normalizeLanguage(language)
+  const loader = prismLanguageLoaders[normalized]
+
+  if (!loader) return Promise.resolve()
+  if (!prismLanguageCache.has(normalized)) {
+    prismLanguageCache.set(normalized, loader().catch(error => {
+      prismLanguageCache.delete(normalized)
+      throw error
+    }))
+  }
+
+  return prismLanguageCache.get(normalized)
+}
+
+function CodeLoading ({ label }) {
+  return (
+    <div className="my-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500 dark:border-gray-800 dark:bg-zinc-950 dark:text-gray-400">
+      {label}
+    </div>
+  )
+}
+
+function CodeSwitch (props) {
+  const language = props.block?.properties?.language
+    ? getTextContent(props.block.properties.language)
+    : ''
+  const normalizedLanguage = normalizeLanguage(language)
+  const [ready, setReady] = useState(!prismLanguageLoaders[normalizedLanguage])
+
+  useEffect(() => {
+    let cancelled = false
+    setReady(!prismLanguageLoaders[normalizedLanguage])
+
+    loadPrismLanguage(normalizedLanguage)
+      .catch(() => null)
+      .finally(() => {
+        if (!cancelled) setReady(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [normalizedLanguage])
+
+  if (normalizedLanguage === 'mermaid') {
+    return <MermaidBlock {...props} />
+  }
+
+  if (!ready) {
+    return <CodeLoading label={`Loading ${language || 'code'}...`} />
+  }
+
+  return <CodeBlock {...props} />
+}
+
 // Lazy-load some heavy components & override the renderers of some block types
 const components = {
   /* Lazy-load */
 
   // Code block
-  Code: dynamic(async () => {
-    return function CodeSwitch (props) {
-      switch (getTextContent(props.block.properties.language)) {
-        case 'Mermaid':
-          return h(
-            dynamic(() => {
-              return import('@/components/notion-blocks/Mermaid').then(module => module.default)
-            }, { ssr: false }),
-            props
-          )
-        default:
-          return h(
-            dynamic(() => {
-              return import('react-notion-x/third-party/code').then(async module => {
-                // Additional prismjs syntax
-                await Promise.all([
-                  import('prismjs/components/prism-markup-templating'),
-                  import('prismjs/components/prism-markup'),
-                  import('prismjs/components/prism-bash'),
-                  import('prismjs/components/prism-c'),
-                  import('prismjs/components/prism-cpp'),
-                  import('prismjs/components/prism-csharp'),
-                  import('prismjs/components/prism-docker'),
-                  import('prismjs/components/prism-java'),
-                  import('prismjs/components/prism-js-templates'),
-                  import('prismjs/components/prism-coffeescript'),
-                  import('prismjs/components/prism-diff'),
-                  import('prismjs/components/prism-git'),
-                  import('prismjs/components/prism-go'),
-                  import('prismjs/components/prism-graphql'),
-                  import('prismjs/components/prism-handlebars'),
-                  import('prismjs/components/prism-less'),
-                  import('prismjs/components/prism-makefile'),
-                  import('prismjs/components/prism-markdown'),
-                  import('prismjs/components/prism-objectivec'),
-                  import('prismjs/components/prism-ocaml'),
-                  import('prismjs/components/prism-python'),
-                  import('prismjs/components/prism-reason'),
-                  import('prismjs/components/prism-rust'),
-                  import('prismjs/components/prism-sass'),
-                  import('prismjs/components/prism-scss'),
-                  import('prismjs/components/prism-solidity'),
-                  import('prismjs/components/prism-sql'),
-                  import('prismjs/components/prism-stylus'),
-                  import('prismjs/components/prism-swift'),
-                  import('prismjs/components/prism-wasm'),
-                  import('prismjs/components/prism-yaml')
-                ])
-                return module.Code
-              })
-            }),
-            props
-          )
-      }
-    }
-  }),
+  Code: CodeSwitch,
   // Database block
   Collection: dynamic(() => {
     return import('react-notion-x/third-party/collection').then(module => module.Collection)

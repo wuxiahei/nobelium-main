@@ -3,6 +3,7 @@ import { clientConfig } from '@/lib/server/config'
 import Container from '@/components/Container'
 import BlogPost from '@/components/BlogPost'
 import Pagination from '@/components/Pagination'
+import HomeHero from '@/components/HomeHero'
 import { getAllPosts } from '@/lib/notion'
 import { useConfig } from '@/lib/config'
 
@@ -15,17 +16,19 @@ export async function getStaticProps () {
     props: {
       page: 1, // current page is 1
       postsToShow,
+      totalPosts,
       showNext
     },
     revalidate: 1
   }
 }
 
-export default function Blog ({ postsToShow, page, showNext }) {
+export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
   const { title, description } = useConfig()
 
   return (
     <Container title={title} description={description}>
+      <HomeHero postCount={totalPosts} />
       {postsToShow.map(post => (
         <BlogPost key={post.id} post={post} />
       ))}

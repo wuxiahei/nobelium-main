@@ -4,6 +4,7 @@ import { useConfig } from '@/lib/config'
 import Head from 'next/head'
 import PropTypes from 'prop-types'
 import cn from 'classnames'
+import ReadingProgress from '@/components/ReadingProgress'
 // import BlogPost from './BlogPost'
 
 const Container = ({ children, layout, fullWidth, ...customMeta }) => {
@@ -69,6 +70,12 @@ const Container = ({ children, layout, fullWidth, ...customMeta }) => {
         className={`wrapper ${BLOG.font === 'serif' ? 'font-serif' : 'font-sans'
           }`}
       >
+        <div className="liquid-bg" aria-hidden="true">
+          <span className="liquid-blob liquid-blob-one" />
+          <span className="liquid-blob liquid-blob-two" />
+          <span className="liquid-blob liquid-blob-three" />
+        </div>
+        {layout === 'blog' && <ReadingProgress />}
         <Header
           navBarTitle={layout === 'blog' ? meta.title : null}
           fullWidth={fullWidth}

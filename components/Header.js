@@ -1,10 +1,8 @@
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useConfig } from '@/lib/config'
 import { useLocale } from '@/lib/locale'
-import useTheme from '@/lib/theme'
 
 const NavBar = () => {
   const BLOG = useConfig()
@@ -13,7 +11,6 @@ const NavBar = () => {
   const links = [
     { id: 0, name: locale.NAV.INDEX, to: BLOG.path || '/', show: true },
     { id: 1, name: locale.NAV.ABOUT, to: '/about', show: BLOG.showAbout },
-    { id: 2, name: locale.NAV.RSS, to: '/feed', show: true, external: true },
     { id: 3, name: locale.NAV.SEARCH, to: '/search', show: true }
   ]
   const currentPath = router.asPath.split('?')[0].split('#')[0]
@@ -56,19 +53,6 @@ const NavBar = () => {
 
 export default function Header ({ navBarTitle, fullWidth }) {
   const BLOG = useConfig()
-  const { dark } = useTheme()
-
-  // Favicon
-
-  const resolveFavicon = fallback => !fallback && dark ? '/favicon.dark.png' : '/favicon.png'
-  const [favicon, _setFavicon] = useState(resolveFavicon())
-  const setFavicon = fallback => _setFavicon(resolveFavicon(fallback))
-
-  useEffect(
-    () => setFavicon(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dark]
-  )
 
   const useSticky = !BLOG.autoCollapsedNavBar
   const navRef = useRef(/** @type {HTMLDivElement} */ undefined)
@@ -126,15 +110,9 @@ export default function Header ({ navBarTitle, fullWidth }) {
           <Link
             href={BLOG.path || '/'}
             aria-label={BLOG.title}
-            className="rounded-md transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500"
+            className="ely-brand rounded-full transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-500"
           >
-            <Image
-              src={favicon}
-              width={24}
-              height={24}
-              alt={BLOG.title}
-              onError={() => setFavicon(true)}
-            />
+            <span aria-hidden="true">Ely</span>
           </Link>
           <HeaderName
             ref={titleRef}

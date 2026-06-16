@@ -7,6 +7,7 @@ import FormattedDate from '@/components/FormattedDate'
 import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
 import TableOfContents from '@/components/TableOfContents'
+import AboutResume from '@/components/AboutResume'
 
 /**
  * A post renderer
@@ -23,6 +24,18 @@ export default function Post (props) {
   const BLOG = useConfig()
   const { post, blockMap, emailHash, fullWidth = false } = props
   const { dark } = useTheme()
+  const isAboutPage = post.slug === 'about'
+
+  if (isAboutPage) {
+    return (
+      <article className="flex flex-col pb-2">
+        <AboutResume post={post} emailHash={emailHash} />
+        <div className="resume-content mt-8 w-full self-center px-4 sm:px-6 md:max-w-3xl">
+          <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />
+        </div>
+      </article>
+    )
+  }
 
   return (
     <article className={cn('flex flex-col pb-2', fullWidth ? 'md:px-24' : 'items-center')}>

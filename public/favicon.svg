@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ely">
+  <defs>
+    <radialGradient id="bg" cx="24%" cy="18%" r="86%">
+      <stop offset="0" stop-color="#ccfbf1"/>
+      <stop offset="0.48" stop-color="#0891b2"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="20" fill="url(#bg)"/>
+  <path d="M18 45V19h29v7.5H27.5v3.7h17.1v7H27.5v3.9H48V45H18Z" fill="#f8fafc"/>
+</svg>
