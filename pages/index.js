@@ -8,7 +8,7 @@ import { getAllPosts } from '@/lib/notion'
 import { useConfig } from '@/lib/config'
 
 export async function getStaticProps () {
-  const posts = await getAllPosts({ includePages: false })
+  const posts = (await getAllPosts({ includePages: false })).filter(isHomePost)
   const postsToShow = posts.slice(0, clientConfig.postsPerPage)
   const totalPosts = posts.length
   const showNext = totalPosts > clientConfig.postsPerPage
@@ -21,6 +21,10 @@ export async function getStaticProps () {
     },
     revalidate: 1
   }
+}
+
+function isHomePost (post) {
+  return post?.slug !== 'about'
 }
 
 export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
