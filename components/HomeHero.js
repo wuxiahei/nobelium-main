@@ -8,7 +8,7 @@ export default function HomeHero ({ postCount }) {
       <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
           <p className="mb-4 inline-flex rounded-full border border-teal-200/70 bg-teal-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-teal-800 dark:border-teal-300/20 dark:bg-teal-300/10 dark:text-teal-100">
-            Ely's blog
+            Ely&apos;s blog
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-gray-950 dark:text-white sm:text-5xl">
             {BLOG.title}
