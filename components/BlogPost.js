@@ -36,6 +36,18 @@ const BlogPost = ({ post }) => {
               {summary}
             </p>
           )}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {post.tags.slice(0, 3).map(tag => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-transparent px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-stone-500 ring-1 ring-stone-200 dark:text-stone-300 dark:ring-stone-700/80"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </article>
     </Link>

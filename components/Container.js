@@ -7,7 +7,7 @@ import cn from 'classnames'
 import ReadingProgress from '@/components/ReadingProgress'
 // import BlogPost from './BlogPost'
 
-const Container = ({ children, layout, fullWidth, ...customMeta }) => {
+const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) => {
   const BLOG = useConfig()
 
   const url = BLOG.path.length ? `${BLOG.link}/${BLOG.path}` : BLOG.link
@@ -79,6 +79,7 @@ const Container = ({ children, layout, fullWidth, ...customMeta }) => {
         {layout === 'blog' && <ReadingProgress />}
         <Header
           navBarTitle={layout === 'blog' ? meta.title : null}
+          headerMeta={headerMeta}
           fullWidth={fullWidth}
         />
         <main className={cn(
@@ -94,7 +95,8 @@ const Container = ({ children, layout, fullWidth, ...customMeta }) => {
 }
 
 Container.propTypes = {
-  children: PropTypes.node
+  children: PropTypes.node,
+  headerMeta: PropTypes.string
 }
 
 export default Container

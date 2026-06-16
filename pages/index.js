@@ -31,7 +31,11 @@ export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
   const { title, description } = useConfig()
 
   return (
-    <Container title={title} description={description}>
+    <Container
+      title={title}
+      description={description}
+      headerMeta={`${totalPosts} texts, notes, and experiments`}
+    >
       <HomeHero postCount={totalPosts} />
       {postsToShow.map(post => (
         <BlogPost key={post.id} post={post} />

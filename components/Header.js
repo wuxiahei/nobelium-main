@@ -51,7 +51,7 @@ const NavBar = () => {
   )
 }
 
-export default function Header ({ navBarTitle, fullWidth }) {
+export default function Header ({ navBarTitle, headerMeta, fullWidth }) {
   const BLOG = useConfig()
 
   const useSticky = !BLOG.autoCollapsedNavBar
@@ -115,15 +115,18 @@ export default function Header ({ navBarTitle, fullWidth }) {
             <span className="ely-brand-mark" aria-hidden="true">
               <span className="ely-brand-kicker">Selected Writings</span>
               <span className="ely-brand-name">Ely</span>
+              {headerMeta && <span className="ely-brand-meta">{headerMeta}</span>}
             </span>
           </Link>
-          <HeaderName
-            ref={titleRef}
-            siteTitle={BLOG.title}
-            siteDescription={BLOG.description}
-            postTitle={navBarTitle}
-            onClick={handleClickHeader}
-          />
+          {navBarTitle && (
+            <HeaderName
+              ref={titleRef}
+              siteTitle={BLOG.title}
+              siteDescription={BLOG.description}
+              postTitle={navBarTitle}
+              onClick={handleClickHeader}
+            />
+          )}
         </div>
         <NavBar />
       </div>

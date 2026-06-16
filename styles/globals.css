@@ -155,7 +155,7 @@ body::-webkit-scrollbar-thumb {
 .ely-brand-mark {
   display: inline-flex;
   flex-direction: column;
-  gap: 0.05rem;
+  gap: 0.1rem;
 }
 
 .ely-brand-kicker {
@@ -175,11 +175,26 @@ body::-webkit-scrollbar-thumb {
   letter-spacing: -0.08em;
 }
 
+.ely-brand-meta {
+  display: none;
+  margin-top: 0.15rem;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #57534e;
+  white-space: nowrap;
+}
+
 .dark .ely-brand {
   color: #f8fafc;
 }
 
 .dark .ely-brand-kicker {
+  color: #a8a29e;
+}
+
+.dark .ely-brand-meta {
   color: #a8a29e;
 }
 
@@ -301,6 +316,10 @@ nav {
 }
 
 @media (min-width: 768px) {
+  .ely-brand-meta {
+    display: inline;
+  }
+
   .sticky-nav-full {
     @apply max-w-full border-b border-gray-200/80 dark:border-gray-800/90;
   }
