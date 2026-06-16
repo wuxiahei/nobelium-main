@@ -145,24 +145,42 @@ body::-webkit-scrollbar-thumb {
 
 .ely-brand {
   display: inline-flex;
-  min-width: 2rem;
-  height: 2rem;
-  align-items: center;
+  min-width: 5.5rem;
+  align-items: flex-start;
   justify-content: center;
-  border-radius: 9999px;
   background: transparent;
   color: #0f172a;
 }
 
-.ely-brand span {
+.ely-brand-mark {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.ely-brand-kicker {
   font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #78716c;
+}
+
+.ely-brand-name {
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.6rem;
   font-weight: 800;
-  letter-spacing: -0.12em;
+  line-height: 0.95;
+  letter-spacing: -0.08em;
 }
 
 .dark .ely-brand {
   color: #f8fafc;
+}
+
+.dark .ely-brand-kicker {
+  color: #a8a29e;
 }
 
 .about-resume-orb {

@@ -4,6 +4,15 @@ import Link from 'next/link'
 
 const BlogPost = ({ post }) => {
   const BLOG = useConfig()
+  const summary = post.summary?.trim()
+  const normalizedSummary = summary?.toLowerCase()
+  const normalizedSlug = post.slug?.trim().toLowerCase()
+  const normalizedTitle = post.title?.trim().toLowerCase()
+  const shouldShowSummary = Boolean(
+    summary &&
+    normalizedSummary !== normalizedSlug &&
+    normalizedSummary !== normalizedTitle
+  )
 
   return (
     <Link
@@ -22,22 +31,10 @@ const BlogPost = ({ post }) => {
               {post.title}
             </h2>
           </header>
-          {post.summary && (
+          {shouldShowSummary && (
             <p className="mt-3 max-w-2xl line-clamp-2 leading-8 text-stone-600 dark:text-stone-300">
-              {post.summary}
+              {summary}
             </p>
-          )}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {post.tags.slice(0, 3).map(tag => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-transparent px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-stone-500 ring-1 ring-stone-200 dark:text-stone-300 dark:ring-stone-700/80"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
           )}
         </div>
       </article>

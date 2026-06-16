@@ -112,7 +112,10 @@ export default function Header ({ navBarTitle, fullWidth }) {
             aria-label={BLOG.title}
             className="ely-brand transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-500"
           >
-            <span aria-hidden="true">E</span>
+            <span className="ely-brand-mark" aria-hidden="true">
+              <span className="ely-brand-kicker">Selected Writings</span>
+              <span className="ely-brand-name">Ely</span>
+            </span>
           </Link>
           <HeaderName
             ref={titleRef}
