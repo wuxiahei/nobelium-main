@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  react-notion-x@7.10.0:
+    hash: 646anfakewt3mwysqn2slgvfgy
+    path: patches/react-notion-x@7.10.0.patch
+
 dependencies:
   axios:
     specifier: ^1.6.1
@@ -23,6 +28,9 @@ dependencies:
   gitalk:
     specifier: ^1.8.0
     version: 1.8.0(react-dom@18.2.0)(react@18.2.0)
+  katex:
+    specifier: 0.16.21
+    version: 0.16.21
   mermaid:
     specifier: ^10.6.1
     version: 10.6.1
@@ -52,7 +60,7 @@ dependencies:
     version: 18.2.0(react@18.2.0)
   react-notion-x:
     specifier: ^7.10.0
-    version: 7.10.0(@babel/runtime@7.23.2)(react-dom@18.2.0)(react@18.2.0)
+    version: 7.10.0(patch_hash=646anfakewt3mwysqn2slgvfgy)(@babel/runtime@7.23.2)(react-dom@18.2.0)(react@18.2.0)
   react-tweet-embed:
     specifier: ^2.0.0
     version: 2.0.0(react@18.2.0)
@@ -3636,7 +3644,7 @@ packages:
       warning: 4.0.3
     dev: false
 
-  /react-notion-x@7.10.0(@babel/runtime@7.23.2)(react-dom@18.2.0)(react@18.2.0):
+  /react-notion-x@7.10.0(patch_hash=646anfakewt3mwysqn2slgvfgy)(@babel/runtime@7.23.2)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-i5FZKruMoRESnx5Lqq1kTp8a/eseErQ3Ph93dKCoCeRRN9hnPGCxUdnu/wsBp5h2BHMqswRujDiclqZvoQE2IA==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -3663,6 +3671,7 @@ packages:
       - '@babel/runtime'
       - '@types/react'
     dev: false
+    patched: true
 
   /react-pdf@9.2.1(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-AJt0lAIkItWEZRA5d/mO+Om4nPCuTiQ0saA+qItO967DTjmGjnhmF+Bi2tL286mOTfBlF5CyLzJ35KTMaDoH+A==}

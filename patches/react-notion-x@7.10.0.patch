@@ -1,0 +1,72 @@
+diff --git a/build/index.js b/build/index.js
+index cbcb3b3c0594ca78a50799c05e3b33687a8a7609..1b2166b0750ef2b95c6c6e09d8e74a6b5b5ead6a 100644
+--- a/build/index.js
++++ b/build/index.js
+@@ -1029,14 +1029,36 @@ function EOI({
+ }) {
+   var _a, _b, _c;
+   const { components } = useNotionContext();
+-  const { original_url, attributes, domain } = (block == null ? void 0 : block.format) || {};
+-  if (!original_url || !attributes) {
++  let { original_url, attributes, domain } = (block == null ? void 0 : block.format) || {};
++  if (!original_url) {
+     return null;
+   }
+-  const title = (_a = attributes.find((attr) => attr.id === "title")) == null ? void 0 : _a.values[0];
+-  let owner = (_b = attributes.find((attr) => attr.id === "owner")) == null ? void 0 : _b.values[0];
+-  const lastUpdatedAt = (_c = attributes.find((attr) => attr.id === "updated_at")) == null ? void 0 : _c.values[0];
++  if (!domain) {
++    try {
++      domain = new URL(original_url).hostname.replace(/^www\./, "");
++    } catch (err) {
++    }
++  }
++  const attrs = attributes || [];
++  let title = (_a = attrs.find((attr) => attr.id === "title")) == null ? void 0 : _a.values[0];
++  let owner = (_b = attrs.find((attr) => attr.id === "owner")) == null ? void 0 : _b.values[0];
++  const lastUpdatedAt = (_c = attrs.find((attr) => attr.id === "updated_at")) == null ? void 0 : _c.values[0];
+   const lastUpdated = lastUpdatedAt ? formatNotionDateTime(lastUpdatedAt) : null;
++  if (!title || !owner) {
++    try {
++      const pathParts = new URL(original_url).pathname.split("/").filter(Boolean);
++      if (!owner && pathParts.length >= 1) {
++        owner = pathParts[0];
++      }
++      if (!title) {
++        title = pathParts.length >= 2 ? pathParts[1] : original_url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
++      }
++    } catch (err) {
++      if (!title) {
++        title = original_url;
++      }
++    }
++  }
+   let externalImage;
+   switch (domain) {
+     case "github.com":
+@@ -1047,13 +1069,8 @@ function EOI({
+       }
+       break;
+     default:
+-      if (true) {
+-        console.log(
+-          `Unsupported external_object_instance domain "${domain}"`,
+-          JSON.stringify(block, null, 2)
+-        );
+-      }
+-      return null;
++      externalImage = void 0;
++      break;
+   }
+   return /* @__PURE__ */ jsxs5(
+     components.Link,
+@@ -3366,6 +3383,9 @@ function Block(props) {
+     case "external_object_instance":
+       return /* @__PURE__ */ jsx32(EOI, { block, className: blockId });
+     default:
++      if (components[block.type]) {
++        return /* @__PURE__ */ jsx32(components[block.type], { block, children });
++      }
+       if (true) {
+         console.log(
+           "Unsupported block type " + block.type,
