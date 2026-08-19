@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from 'react'
 
 export default function TableOfContents ({ blockMap, className, style }) {
   const collectionId = Object.keys(blockMap.collection)[0]
-  const page = Object.values(blockMap.block).find(block => block.value.parent_id === collectionId).value
-  const nodes = useMemo(() => getPageTableOfContents(page, blockMap), [page, blockMap])
+  const collectionPage = collectionId ? Object.values(blockMap.block).find(block => block.value.parent_id === collectionId) : null
+  const page = collectionPage ? collectionPage.value : null
+  const nodes = useMemo(() => page ? getPageTableOfContents(page, blockMap) : [], [page, blockMap])
   const [activeId, setActiveId] = useState(null)
 
   useEffect(() => {
