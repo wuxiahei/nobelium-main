@@ -1,6 +1,7 @@
 {
   "name": "nobelium",
   "version": "1.3.0",
+  "packageManager": "pnpm@11.19.0",
   "homepage": "",
   "license": "MIT",
   "repository": {
