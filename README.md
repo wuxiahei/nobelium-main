@@ -1,22 +1,42 @@
-# Ely Blog
+# Nobelium Blog
 
 A personal blog powered by Notion, Next.js, Tailwind CSS, and Vercel.
 
-This project keeps Notion as the writing backend while adding a more personal visual layer: Ely wordmark, organic blob background, article cards, an About resume page, and optimized code/Markdown rendering.
+This project uses Notion as the writing backend while adding a more personal visual layer: article cards, an About resume page, and optimized code/Markdown rendering.
 
 ## Features
 
 - Notion database driven posts and pages
-- Personal homepage with lightweight organic visual effects
 - About page rendered as a resume-style profile when `slug` is `about`
 - Search and tag filtering
 - Article reading progress and active table of contents
-- RSS feed kept at `/feed` for compatibility, but hidden from visible navigation
+- RSS feed at `/feed`
 - Syntax highlighting optimized to load common code languages on demand
 
 ## Notion Setup
 
-Create or keep a Notion database with these properties:
+### 1. Create a Notion Integration
+
+1. Go to [https://www.notion.so/my-integrations](https://www.notion.so/my-integrations)
+2. Click "New integration"
+3. Give it a name (e.g., "Nobelium Blog")
+4. Select your workspace
+5. Copy the "Internal Integration Secret" — this is your `NOTION_API_KEY`
+
+### 2. Share Your Database with the Integration
+
+1. Open your Notion database
+2. Click the `...` menu (top right) → "Connections" → select your integration
+
+### 3. Get Your Database ID
+
+1. Open your Notion database in a browser
+2. The URL looks like: `https://notion.so/Your-Workspace/DATABASE_ID?v=...`
+3. Copy the 32-character hex string (the DATABASE_ID)
+
+### 4. Database Properties
+
+Your Notion database should have these properties:
 
 | Property | Type | Notes |
 | --- | --- | --- |
@@ -37,10 +57,33 @@ For the About page, create a row with:
 
 The page body can use H2 sections such as `Profile`, `Skills`, `Experience`, `Projects`, and `Contact`.
 
+## Environment Variables
+
+Create a `.env` file based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+| Variable | Description |
+| --- | --- |
+| `NOTION_API_KEY` | Notion integration token (recommended) |
+| `NOTION_DATABASE_ID` | Your Notion database ID |
+
+Legacy variables (only if NOTION_API_KEY is not configured):
+
+| Variable | Description |
+| --- | --- |
+| `NOTION_PAGE_ID` | Notion page ID for unofficial API access |
+| `NOTION_ACCESS_TOKEN` | Notion access token for unofficial API |
+
 ## Development
 
 ```bash
 pnpm install
+cp .env.example .env  # then fill in your values
 pnpm dev
 ```
 
@@ -49,12 +92,6 @@ pnpm dev
 ```bash
 pnpm build
 ```
-
-## Environment Variables
-
-- `NOTION_PAGE_ID`: required when using a public Notion database/page.
-- `NOTION_ACCESS_TOKEN`: optional for private Notion access.
-- `NOTION_API_KEY`, `NOTION_DATABASE_ID`, `NOTION_DATA_SOURCE_ID`: optional official Notion API path.
 
 ## Configuration
 
