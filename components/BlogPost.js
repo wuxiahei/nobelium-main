@@ -10,22 +10,22 @@ const BlogPost = ({ post }) => {
   return (
     <Link
       href={`${BLOG.path}/${post.slug}`}
-      className="group block border-b border-stone-200 py-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-500 dark:border-stone-800 md:py-7"
+      className="group -mx-3 block border-b border-[var(--ink-line)] px-3 py-6 transition-colors hover:bg-[var(--ink-surface)] ink-focus md:py-7"
     >
       <article key={post.id} className="transition duration-200 md:grid md:grid-cols-[148px_minmax(0,1fr)] md:gap-8">
-        <div className="mb-3 text-[0.78rem] uppercase tracking-[0.22em] text-stone-400 dark:text-stone-500 md:mb-0 md:pt-1">
+        <div className="mb-3 text-[0.78rem] uppercase tracking-normal text-[var(--ink-muted)] md:mb-0 md:pt-1">
           <time className="block">
             <FormattedDate date={post.date} />
           </time>
         </div>
         <div>
           <header>
-            <h2 className="text-xl font-semibold leading-snug tracking-[-0.02em] text-gray-950 transition-colors group-hover:text-teal-800 dark:text-gray-50 dark:group-hover:text-teal-200 md:text-[1.45rem]">
+            <h2 className="text-xl font-semibold leading-snug tracking-normal text-[var(--ink-main)] transition-colors group-hover:text-[var(--ink-accent)] md:text-[1.45rem]">
               {post.title}
             </h2>
           </header>
           {shouldShowSummary && (
-            <p className="mt-3 max-w-2xl line-clamp-2 leading-8 text-stone-600 dark:text-stone-300">
+            <p className="mt-3 max-w-2xl line-clamp-2 leading-8 text-[var(--ink-muted)]">
               {summary}
             </p>
           )}
@@ -34,7 +34,7 @@ const BlogPost = ({ post }) => {
               {post.tags.slice(0, 3).map(tag => (
                 <span
                   key={tag}
-                  className="rounded-full bg-transparent px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-stone-500 ring-1 ring-stone-200 dark:text-stone-300 dark:ring-stone-700/80"
+                  className="rounded-sm bg-transparent px-2.5 py-1 text-xs font-medium uppercase tracking-normal text-[var(--ink-muted)] ring-1 ring-[var(--ink-line)]"
                 >
                   {tag}
                 </span>

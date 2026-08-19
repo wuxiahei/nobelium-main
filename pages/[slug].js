@@ -23,7 +23,7 @@ export default function BlogPost ({ post, blockMap, emailHash, previousPost, nex
   return (
     <Container
       layout="blog"
-      title={post.title}
+      title={post.slug === 'about' ? `作者简介 · ${BLOG.author}` : post.title}
       description={post.summary}
       slug={post.slug}
       // date={new Date(post.publishedAt).toISOString()}
@@ -42,14 +42,14 @@ export default function BlogPost ({ post, blockMap, emailHash, previousPost, nex
       {/* Back and Top */}
       <div
         className={cn(
-          'mx-auto my-8 flex justify-between px-4 text-sm font-medium text-gray-500 dark:text-gray-500',
+          'mx-auto my-8 flex justify-between px-4 text-sm font-medium text-[var(--ink-muted)]',
           fullWidth ? 'md:px-24' : 'max-w-3xl sm:px-6'
         )}
       >
         <button
           type="button"
           onClick={() => router.push(BLOG.path || '/')}
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-gray-100 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:hover:bg-gray-900 dark:hover:text-gray-100"
+          className="inline-flex items-center gap-2 rounded-sm px-3 py-2 transition-colors hover:bg-[var(--ink-accent-soft)] hover:text-[var(--ink-main)] ink-focus"
         >
           <span aria-hidden="true">&larr;</span>
           {locale.POST.BACK}
@@ -60,7 +60,7 @@ export default function BlogPost ({ post, blockMap, emailHash, previousPost, nex
             top: 0,
             behavior: 'smooth'
           })}
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-gray-100 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:hover:bg-gray-900 dark:hover:text-gray-100"
+          className="inline-flex items-center gap-2 rounded-sm px-3 py-2 transition-colors hover:bg-[var(--ink-accent-soft)] hover:text-[var(--ink-main)] ink-focus"
         >
           <span aria-hidden="true">&uarr;</span>
           {locale.POST.TOP}

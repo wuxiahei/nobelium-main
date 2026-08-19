@@ -12,7 +12,7 @@ const Pagination = ({ page, showNext }) => {
 
   return (
     <div
-      className={`mt-12 flex border-t border-stone-200 pt-8 text-sm font-medium text-stone-700 dark:border-stone-800 dark:text-stone-300 ${additionalClassName}`}
+      className={`mt-12 flex border-t border-[var(--ink-line)] pt-8 text-sm font-medium text-[var(--ink-muted)] ${additionalClassName}`}
     >
       {currentPage !== 1 && (
         <Link
@@ -22,7 +22,7 @@ const Pagination = ({ page, showNext }) => {
               : `/page/${currentPage - 1}`
           }
           rel="prev"
-          className="inline-flex items-center gap-3 rounded-md px-3 py-2 transition-transform duration-200 hover:-translate-x-1 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 dark:hover:text-gray-50"
+          className="inline-flex items-center gap-3 rounded-sm px-3 py-2 transition-colors hover:bg-[var(--ink-accent-soft)] hover:text-[var(--ink-main)] ink-focus"
         >
           <span aria-hidden="true">&larr;</span>
           {locale.PAGINATION.PREV}
@@ -32,7 +32,7 @@ const Pagination = ({ page, showNext }) => {
         <Link
           href={`/page/${currentPage + 1}`}
           rel="next"
-          className="inline-flex items-center gap-3 rounded-md px-3 py-2 transition-transform duration-200 hover:translate-x-1 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 dark:hover:text-gray-50"
+          className="inline-flex items-center gap-3 rounded-sm px-3 py-2 transition-colors hover:bg-[var(--ink-accent-soft)] hover:text-[var(--ink-main)] ink-focus"
         >
           {locale.PAGINATION.NEXT}
           <span aria-hidden="true">&rarr;</span>

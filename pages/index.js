@@ -34,7 +34,7 @@ export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
     <Container
       title={title}
       description={description}
-      headerMeta={`${totalPosts} texts, notes, and experiments`}
+      headerMeta={`${totalPosts} 篇文章与札记`}
     >
       <HomeHero postCount={totalPosts} />
       {postsToShow.map(post => (

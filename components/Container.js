@@ -71,11 +71,6 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
         className={`wrapper ${BLOG.font === 'serif' ? 'font-serif' : 'font-sans'
           }`}
       >
-        <div className="liquid-bg" aria-hidden="true">
-          <span className="liquid-blob liquid-blob-one" />
-          <span className="liquid-blob liquid-blob-two" />
-          <span className="liquid-blob liquid-blob-three" />
-        </div>
         {layout === 'blog' && <ReadingProgress />}
         <Header
           navBarTitle={null}

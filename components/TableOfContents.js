@@ -66,7 +66,7 @@ export default function TableOfContents ({ blockMap, className, style }) {
 
   return (
     <aside
-      className={cn(className, 'ml-8 border-l border-gray-200 pl-4 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-500')}
+      className={cn(className, 'ml-8 border-l border-[var(--ink-line)] pl-4 text-sm text-[var(--ink-muted)]')}
       style={style}
     >
       {nodes.map(node => (
@@ -75,10 +75,10 @@ export default function TableOfContents ({ blockMap, className, style }) {
             type="button"
             data-target-id={node.id}
             className={cn(
-              'block max-w-[220px] cursor-pointer break-words py-1.5 text-left leading-5 transition-colors hover:text-gray-950 dark:hover:text-gray-100',
+              'block max-w-[220px] cursor-pointer break-words py-1.5 text-left leading-5 transition-colors hover:text-[var(--ink-main)] ink-focus',
               activeId === node.id.replaceAll('-', '')
-                ? 'font-semibold text-teal-700 dark:text-teal-200'
-                : 'text-gray-500 dark:text-gray-500'
+                ? 'font-semibold text-[var(--ink-accent)]'
+                : 'text-[var(--ink-muted)]'
             )}
             style={{ paddingLeft: (node.indentLevel * 24) + 'px' }}
             onClick={() => scrollTo(node.id)}

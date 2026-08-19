@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ely / 水墨布局参考</title>
+  <style>
+    :root {
+      --paper: #f7f4ec;
+      --paper-2: #fffdf7;
+      --ink: #25231f;
+      --muted: #766f66;
+      --line: #d8d0c4;
+      --accent: #2f5d50;
+      --red: #9a4939;
+      --dark-paper: #171614;
+      --dark-surface: #211f1c;
+      --dark-ink: #f1eee6;
+      --dark-muted: #a8a198;
+      --dark-line: #413d37;
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: "IBM Plex Sans", "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #d8d1c5;
+      font-family: var(--sans);
+    }
+    .board {
+      width: 1440px;
+      margin: 36px auto;
+      padding: 42px;
+      background: var(--paper);
+      box-shadow: 0 28px 80px rgba(36, 31, 26, .16);
+    }
+    .board-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 22px;
+      margin-bottom: 28px;
+    }
+    .board-head h1 {
+      margin: 0;
+      font: 600 32px/1.1 var(--serif);
+      letter-spacing: .02em;
+    }
+    .board-head p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .board-head span { color: var(--red); font-size: 12px; letter-spacing: .16em; }
+    .options { display: grid; gap: 34px; }
+    .option { border: 1px solid var(--line); background: var(--paper-2); }
+    .option-label { display: flex; justify-content: space-between; padding: 15px 18px; border-bottom: 1px solid var(--line); }
+    .option-label strong { font-size: 13px; letter-spacing: .14em; color: var(--red); }
+    .option-label span { color: var(--muted); font-size: 12px; }
+    .mock { min-height: 520px; padding: 28px; position: relative; overflow: hidden; }
+    .mock::after {
+      content: ""; position: absolute; width: 230px; height: 34px; right: -54px; top: 92px;
+      background: rgba(47, 93, 80, .1); transform: rotate(-17deg); filter: blur(8px);
+      border-radius: 58% 42% 47% 53% / 44% 50% 50% 56%; pointer-events: none;
+    }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 19px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .seal { width: 33px; height: 33px; display: grid; place-items: center; background: var(--red); color: #fff8ed; font: 700 16px var(--serif); transform: rotate(-4deg); }
+    .brand b { font: 700 23px var(--serif); }
+    .brand small { color: var(--muted); font-size: 11px; }
+    .nav { display: flex; gap: 23px; color: var(--muted); font-size: 12px; }
+    .ink-line { height: 7px; width: 170px; background: var(--ink); opacity: .75; transform: rotate(-2deg); filter: blur(.3px); clip-path: polygon(0 28%, 7% 5%, 34% 20%, 58% 0, 100% 24%, 94% 78%, 63% 66%, 26% 100%, 4% 72%); }
+    .index-grid { display: grid; grid-template-columns: 180px minmax(0, 1fr) 220px; gap: 36px; margin-top: 44px; }
+    .side-mark { border-right: 1px solid var(--line); padding-right: 24px; }
+    .side-mark h2 { margin: 0; font: 500 50px/.9 var(--serif); writing-mode: vertical-rl; letter-spacing: .12em; }
+    .side-mark p { color: var(--muted); font-size: 12px; line-height: 1.8; margin-top: 26px; }
+    .eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    .index-main h2 { margin: 10px 0 26px; font: 500 34px/1.25 var(--serif); }
+    .post { padding: 19px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 86px 1fr; gap: 20px; }
+    .post time { color: var(--muted); font-size: 12px; padding-top: 3px; }
+    .post h3 { margin: 0; font: 600 21px/1.35 var(--serif); }
+    .post p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .topic { border-left: 1px solid var(--line); padding-left: 20px; }
+    .topic h4 { margin: 0 0 18px; font: 600 17px var(--serif); }
+    .topic a { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 13px; }
+    .topic em { color: var(--muted); font-style: normal; font-size: 11px; }
+
+    .reading-grid { display: grid; grid-template-columns: 190px minmax(0, 680px) 220px; gap: 34px; max-width: 1120px; margin: 0 auto; }
+    .reading-meta { padding-top: 42px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .reading-meta strong { display: block; color: var(--red); font-size: 11px; letter-spacing: .15em; margin-bottom: 14px; }
+    .article h1 { margin: 2px 0 16px; font: 500 46px/1.18 var(--serif); }
+    .article .lead { color: var(--muted); font-size: 16px; line-height: 1.8; border-bottom: 1px solid var(--line); padding-bottom: 22px; }
+    .article h3 { margin: 33px 0 11px; font: 600 24px/1.3 var(--serif); }
+    .article p { font: 16px/1.95 var(--serif); }
+    .formula { margin: 25px 0; padding: 23px; text-align: center; background: #f0ece2; border: 1px solid var(--line); font: 24px/1.6 Georgia, serif; overflow: hidden; }
+    .formula small { display: block; text-align: left; color: var(--muted); font: 11px var(--sans); margin-top: 10px; }
+    .toc { border-left: 1px solid var(--line); padding-left: 19px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .toc b { display: block; color: var(--ink); margin-bottom: 12px; }
+    .toc .active { color: var(--accent); border-left: 2px solid var(--accent); margin-left: -21px; padding-left: 19px; }
+
+    .ai-shell { display: grid; grid-template-columns: 205px minmax(0, 1fr) 245px; min-height: 465px; background: var(--dark-paper); color: var(--dark-ink); }
+    .ai-side, .ai-context { padding: 20px; background: var(--dark-surface); }
+    .ai-side { border-right: 1px solid var(--dark-line); }
+    .ai-context { border-left: 1px solid var(--dark-line); }
+    .ai-side h3, .ai-context h3 { margin: 0 0 19px; font: 600 18px var(--serif); }
+    .new-chat { padding: 10px 12px; border: 1px solid #718b7e; color: #c9dfd2; font-size: 12px; margin-bottom: 22px; }
+    .session { padding: 12px 0; border-top: 1px solid var(--dark-line); color: var(--dark-muted); font-size: 12px; }
+    .session.current { color: var(--dark-ink); }
+    .session small { display: block; margin-top: 5px; color: #7f7972; }
+    .ai-main { display: flex; flex-direction: column; padding: 26px 40px 22px; }
+    .ai-main header { display: flex; justify-content: space-between; padding-bottom: 17px; border-bottom: 1px solid var(--dark-line); }
+    .ai-main header b { font: 600 22px var(--serif); }
+    .mode { color: #a8c8b8; font-size: 11px; }
+    .messages { flex: 1; padding: 24px 0; }
+    .message { max-width: 80%; margin-bottom: 20px; padding: 13px 16px; font-size: 13px; line-height: 1.75; }
+    .message.user { margin-left: auto; background: #35443d; }
+    .message.assistant { border-left: 2px solid #a8c8b8; padding-left: 14px; color: #e3e0d7; }
+    .ai-input { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--dark-line); color: #817a72; font-size: 12px; }
+    .send { margin-left: auto; color: #d8eee0; }
+    .context-card { border-top: 1px solid var(--dark-line); padding: 14px 0; color: var(--dark-muted); font-size: 12px; line-height: 1.7; }
+    .context-card b { display: block; color: var(--dark-ink); margin-bottom: 6px; }
+    .context-formula { padding: 14px 10px; background: #2a2824; text-align: center; font: 17px Georgia, serif; color: #eee9dc; }
+    .note { margin-top: 18px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-head">
+      <div>
+        <h1>Ely / 水墨布局参考</h1>
+        <p>不是最终视觉稿，用来比较首页、文章页和独立 AI 工作区的结构取舍</p>
+      </div>
+      <span>INK STUDY · 2026</span>
+    </header>
+
+    <section class="options">
+      <article class="option">
+        <div class="option-label"><strong>A · 墨间索引</strong><span>首页 / 高密度内容发现</span></div>
+        <div class="mock">
+          <div class="topbar"><div class="brand"><div class="seal">E</div><div><b>Ely</b><small> notes on systems, code &amp; making</small></div></div><div class="nav"><span>文章</span><span>归档</span><span>AI 学习室</span><span>About</span></div></div>
+          <div class="index-grid"><aside class="side-mark"><h2>墨间</h2><p>把技术、设计和正在思考的事，写成可以再次找到的笔记。</p><div class="ink-line"></div></aside><section class="index-main"><div class="eyebrow">Recent writing</div><h2>最近写下的几件事</h2><div class="post"><time>08.19<br>2026</time><div><h3>为什么内容会在加载时消失</h3><p>从 Notion 数据、渲染边界和异常状态，重新梳理文章可靠性。</p></div></div><div class="post"><time>08.11<br>2026</time><div><h3>让长文阅读保持安静</h3><p>目录、公式、代码块和移动端阅读的几种排布方式。</p></div></div><div class="post"><time>07.28<br>2026</time><div><h3>一个小系统的设计笔记</h3><p>从问题拆解开始，把想法变成可以继续维护的东西。</p></div></div></section><aside class="topic"><h4>主题索引</h4><a href="#">工程实践 <em>18</em></a><a href="#">阅读与写作 <em>12</em></a><a href="#">设计系统 <em>9</em></a><a href="#">AI 实验 <em>7</em></a><a href="#">全部归档 <em>53</em></a></aside></div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-label"><strong>B · 沉浸阅读</strong><span>文章页 / 长文与公式优先</span></div>
+        <div class="mock">
+          <div class="reading-grid"><aside class="reading-meta"><strong>ARTICLE 014</strong><span>2026 年 8 月 19 日</span><br><span>阅读约 8 分钟</span><br><br><span>← 返回文章索引</span></aside><article class="article"><div class="eyebrow">Engineering / Reliability</div><h1>让长文阅读保持安静</h1><div class="lead">正文应当是页面最稳定的部分，公式、代码和图表都应该服务于理解，而不是打断它。</div><h3>先把内容放回中心</h3><p>水墨不是黑白滤镜，而是一种克制的层级关系。标题是浓墨，正文是墨色，说明和目录是淡墨，空白负责呼吸。</p><div class="formula">∫<sub>0</sub><sup>∞</sup> e<sup>−x²</sup> dx = √π / 2<small>公式源：\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2} · 复制</small></div><p>当公式无法渲染时，也不能变成空白。页面应保留源文本，并让读者继续阅读和修复。</p></article><aside class="toc"><b>本文目录</b><div class="active">先把内容放回中心</div><div>公式的可靠性边界</div><div>移动端的阅读节奏</div></aside></div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-label"><strong>C · AI 学习室</strong><span>独立 /ai 工作区 / 会话与上下文分离</span></div>
+        <div class="mock">
+          <div class="ai-shell"><aside class="ai-side"><h3>AI 学习室</h3><div class="new-chat">＋ 新建本地会话</div><div class="session current">公式渲染排查<small>刚刚 · 本地会话</small></div><div class="session">文章结构整理<small>昨天 · 本地会话</small></div><div class="session">管理员模板<small>公开提示词</small></div></aside><section class="ai-main"><header><b>公式渲染排查</b><span class="mode">本地会话 · 不保存到服务端</span></header><div class="messages"><div class="message user">如果 Notion 的公式 expression 丢失，还能恢复吗？</div><div class="message assistant">前端不能凭空恢复已经删除的内容，但可以保留原始快照、公式源文本和失败状态。当前文章使用 KaTeX 渲染，失败时显示源文本。</div></div><div class="ai-input">输入问题，支持 Markdown 与 LaTeX <span class="send">发送 ↗</span></div></section><aside class="ai-context"><h3>当前上下文</h3><div class="context-card"><b>文章</b>让长文阅读保持安静<br>只引用用户主动选择的段落</div><div class="context-card"><b>公式预览</b><div class="context-formula">E = mc²</div></div><div class="context-card"><b>管理员策略</b>API Key 仅服务端可见<br>会话默认不写入数据库</div></aside></div>
+        </div>
+      </article>
+    </section>
+    <p class="note">参考板中的文案、色值和组件只是决策用示例。正式实现前还需要在 360px 移动端、深色模式、公式失败状态和键盘操作下重新验证。</p>
+  </main>
+</body>
+</html>

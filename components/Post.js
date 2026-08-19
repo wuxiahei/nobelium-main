@@ -44,16 +44,16 @@ export default function Post (props) {
   return (
     <article className={cn('book-page flex flex-col pb-2', fullWidth ? 'md:px-24' : 'items-center')}>
       <div className={cn('w-full', { 'max-w-3xl px-4 sm:px-6': !fullWidth })}>
-        <p className="mb-4 text-xs uppercase tracking-[0.34em] text-stone-400 dark:text-stone-500">
-          Chapter
+        <p className="ink-eyebrow mb-4">
+          文章
         </p>
-        <h1 className="w-full text-3xl font-semibold leading-tight tracking-[-0.03em] text-gray-950 dark:text-white md:text-[3rem]">
+        <h1 className="w-full text-3xl font-semibold leading-tight tracking-normal text-[var(--ink-main)] md:text-[3rem]">
           {post.title}
         </h1>
       </div>
       {post.type[0] !== 'Page' && (
         <nav className={cn(
-          'mt-6 flex w-full flex-wrap items-center gap-x-3 gap-y-3 text-sm text-stone-500 dark:text-stone-400',
+          'mt-6 flex w-full flex-wrap items-center gap-x-3 gap-y-3 text-sm text-[var(--ink-muted)]',
           contentWidthClass
         )}>
           <div>
@@ -80,7 +80,7 @@ export default function Post (props) {
         </div>
       </div>
       {hasAdjacentPosts && (
-        <div className={cn('mt-12 w-full border-t border-stone-200 pt-6 dark:border-stone-800', contentWidthClass)}>
+        <div className={cn('mt-12 w-full border-t border-[var(--ink-line)] pt-6', contentWidthClass)}>
           <div className="grid gap-3 md:grid-cols-2">
             {previousPost ? (
               <AdjacentPostLink
@@ -123,14 +123,14 @@ function AdjacentPostLink ({ href, label, title, align }) {
     <Link
       href={href}
       className={cn(
-        'block rounded-lg border border-stone-200 bg-white/70 px-4 py-4 transition hover:border-stone-300 hover:bg-white dark:border-stone-800 dark:bg-white/[0.03] dark:hover:border-stone-700 dark:hover:bg-white/[0.05]',
+        'block rounded-sm border border-[var(--ink-line)] bg-[var(--ink-surface)] px-4 py-4 transition hover:border-[var(--ink-accent)] hover:bg-[var(--ink-accent-soft)] ink-focus',
         align === 'right' && 'text-left md:text-right'
       )}
     >
-      <p className="text-[0.68rem] uppercase tracking-[0.22em] text-stone-400 dark:text-stone-500">
+      <p className="text-[0.68rem] uppercase tracking-normal text-[var(--ink-muted)]">
         {label}
       </p>
-      <p className="mt-2 text-base font-semibold leading-snug text-gray-950 dark:text-gray-50">
+      <p className="mt-2 text-base font-semibold leading-snug text-[var(--ink-main)]">
         {title}
       </p>
     </Link>

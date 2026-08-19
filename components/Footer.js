@@ -10,11 +10,11 @@ const Footer = ({ fullWidth }) => {
 
   return (
     <div
-      className={`m-auto mt-10 w-full flex-shrink-0 text-gray-500 transition-all dark:text-gray-500 ${
+      className={`m-auto mt-10 w-full flex-shrink-0 text-[var(--ink-muted)] transition-all ${
         !fullWidth ? 'max-w-3xl px-4 sm:px-6' : 'px-4 md:px-24'
       }`}
     >
-      <hr className="border-gray-200 dark:border-gray-800" />
+      <hr className="border-[var(--ink-line)]" />
       <div className="my-5 text-sm leading-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p>

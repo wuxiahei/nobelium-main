@@ -3,27 +3,31 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useConfig } from '@/lib/config'
 import { useLocale } from '@/lib/locale'
+import { Bot, ChevronUp, House, Search, UserRound } from 'lucide-react'
 
 const NavBar = () => {
   const BLOG = useConfig()
   const locale = useLocale()
   const router = useRouter()
   const links = [
-    { id: 0, name: locale.NAV.INDEX, to: BLOG.path || '/', show: true },
-    { id: 1, name: locale.NAV.ABOUT, to: '/about', show: BLOG.showAbout },
-    { id: 3, name: locale.NAV.SEARCH, to: '/search', show: true }
+    { id: 0, name: locale.NAV.INDEX, to: BLOG.path || '/', show: true, icon: House },
+    { id: 1, name: locale.NAV.ABOUT, to: '/about', show: BLOG.showAbout, icon: UserRound },
+    { id: 2, name: locale.NAV.AI || 'AI 工作间', to: '/ai', show: BLOG.showAI !== false, icon: Bot },
+    { id: 3, name: locale.NAV.SEARCH, to: '/search', show: true, icon: Search }
   ]
   const currentPath = router.asPath.split('?')[0].split('#')[0]
 
   return (
     <div className="flex-shrink-0">
-      <ul className="flex flex-row items-center gap-1 sm:gap-2">
+      <ul className="flex flex-row items-center gap-1" aria-label="主要导航">
         {links.map(
           link => {
             const active = !link.external && (
               currentPath === link.to ||
               (link.to === '/search' && router.pathname === '/tag/[tag]')
             )
+
+            const Icon = link.icon
 
             return (
               link.show && (
@@ -33,13 +37,16 @@ const NavBar = () => {
                     target={link.external ? '_blank' : undefined}
                     rel={link.external ? 'noreferrer' : undefined}
                     aria-current={active ? 'page' : undefined}
-                    className={`block rounded-md px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 ${
+                    aria-label={link.name}
+                    title={link.name}
+                    className={`ink-nav-link inline-flex h-10 items-center justify-center gap-2 px-2.5 text-sm font-medium transition sm:h-9 ${
                       active
-                        ? 'bg-gray-950 text-white dark:bg-white dark:text-gray-950'
-                        : 'text-gray-600 hover:bg-stone-100 hover:text-black dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white'
+                        ? 'ink-nav-link-active'
+                        : ''
                     }`}
                   >
-                    {link.name}
+                    <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
+                    <span className="hidden md:inline">{link.name}</span>
                   </Link>
                 </li>
               )
@@ -97,23 +104,15 @@ export default function Header ({ navBarTitle, headerMeta, fullWidth }) {
         ref={navRef}
         onClick={handleClickHeader}
       >
-        <svg
-          viewBox="0 0 24 24"
-          className="caret w-6 h-6 absolute inset-x-0 bottom-0 mx-auto pointer-events-none opacity-30 group-hover:opacity-100 transition duration-100"
-        >
-          <path
-            d="M12 10.828l-4.95 4.95-1.414-1.414L12 8l6.364 6.364-1.414 1.414z"
-            className="fill-black dark:fill-white"
-          />
-        </svg>
+        <ChevronUp className="caret pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-4 w-4 opacity-30 transition duration-100 group-hover:opacity-100" aria-hidden="true" />
         <div className="flex min-w-0 items-center">
           <Link
             href={BLOG.path || '/'}
             aria-label={BLOG.title}
-            className="ely-brand transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-500"
+            className="ely-brand ink-focus transition hover:opacity-90"
           >
             <span className="ely-brand-mark" aria-hidden="true">
-              <span className="ely-brand-kicker">Selected Writings</span>
+              <span className="ely-brand-kicker">墨间札记</span>
               <span className="ely-brand-name">Ely</span>
               {headerMeta && <span className="ely-brand-meta">{headerMeta}</span>}
             </span>
@@ -138,13 +137,13 @@ const HeaderName = forwardRef(function HeaderName ({ siteTitle, siteDescription,
   return (
     <p
       ref={ref}
-      className="header-name ml-3 min-w-0 font-medium text-gray-700 dark:text-gray-200 capture-pointer-events grid-rows-1 grid-cols-1 items-center"
+      className="header-name ml-3 min-w-0 font-medium text-[var(--ink-main)] capture-pointer-events grid-rows-1 grid-cols-1 items-center"
       onClick={onClick}
     >
       {postTitle && <span className="post-title row-start-1 col-start-1 truncate">{postTitle}</span>}
       <span className="row-start-1 col-start-1 truncate">
         <span className="site-title">{siteTitle}</span>
-        <span className="site-description font-normal text-gray-500 dark:text-gray-400">, {siteDescription}</span>
+        <span className="site-description font-normal text-[var(--ink-muted)]">, {siteDescription}</span>
       </span>
     </p>
   )

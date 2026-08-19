@@ -26,7 +26,7 @@ const CollectionBlock = dynamic(() => {
 })
 
 const EquationBlock = dynamic(() => {
-  return import('react-notion-x/third-party/equation').then(module => module.Equation)
+  return import('@/components/notion-blocks/Equation').then(module => module.default)
 }, {
   loading: () => <CodeLoading label="Loading equation..." />
 })

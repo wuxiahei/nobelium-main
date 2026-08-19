@@ -66,13 +66,6 @@ class MyDocument extends Document {
                 crossOrigin="anonymous"
               />
               <link
-                rel="preload"
-                as="style"
-                href={`https://fonts.googleapis.com/css2?family=Noto+${
-                  config.font === 'serif' ? 'Serif' : 'Sans'
-                }+${CJK()}:wght@400;500;700&display=swap`}
-              />
-              <link
                 rel="stylesheet"
                 href={`https://fonts.googleapis.com/css2?family=Noto+${
                   config.font === 'serif' ? 'Serif' : 'Sans'

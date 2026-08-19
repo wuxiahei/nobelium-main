@@ -3,7 +3,8 @@
     "INDEX": "Blog",
     "RSS": "RSS",
     "SEARCH": "Buscar",
-    "ABOUT": "Acerca de mí"
+    "ABOUT": "Autor",
+    "AI": "Espacio de IA"
   },
   "PAGINATION": {
     "PREV": "Anterior",
