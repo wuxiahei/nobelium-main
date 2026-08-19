@@ -19,7 +19,7 @@ export async function getStaticProps () {
       totalPosts,
       showNext
     },
-    revalidate: 1
+    revalidate: 300
   }
 }
 

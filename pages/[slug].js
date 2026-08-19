@@ -76,7 +76,7 @@ export async function getStaticPaths () {
   const posts = await getAllPosts({ includePages: true })
   return {
     paths: posts.map(row => `${clientConfig.path}/${row.slug}`),
-    fallback: true
+    fallback: 'blocking'
   }
 }
 
@@ -100,6 +100,6 @@ export async function getStaticProps ({ params: { slug } }) {
 
   return {
     props: { post, blockMap, emailHash, previousPost, nextPost },
-    revalidate: 1
+    revalidate: 300
   }
 }

@@ -204,6 +204,61 @@ pre[class*='language-'] {
   padding-right: 2px;
 }
 
+.notion-toggle {
+  margin: 0.2rem 0;
+  border-radius: 0.25rem;
+}
+
+.notion-toggle > summary {
+  padding: 0.25rem 0.35rem;
+  transition: background-color 150ms ease;
+}
+
+.notion-toggle > summary:hover {
+  @apply bg-stone-100/80 dark:bg-white/5;
+}
+
+.notion-toggle > div {
+  margin-left: 1.5rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid rgb(214 211 209 / 0.8);
+}
+
+.dark .notion-toggle > div {
+  border-left-color: rgb(68 64 60 / 0.9);
+}
+
+.notion-simple-table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  border-color: rgb(214 211 209 / 0.9);
+}
+
+.notion-simple-table > tbody {
+  display: table;
+  min-width: 100%;
+}
+
+.notion-simple-table td {
+  min-width: 9rem;
+  vertical-align: top;
+  border-color: rgb(214 211 209 / 0.9);
+  line-height: 1.65;
+}
+
+.dark .notion-simple-table,
+.dark .notion-simple-table td {
+  border-color: rgb(68 64 60 / 0.95);
+}
+
+.notion-simple-table-header-row td,
+.notion-simple-table-header-cell {
+  @apply bg-stone-100 font-semibold text-gray-950 dark:bg-stone-900 dark:text-gray-50;
+}
+
 .notion-inline-code {
   @apply rounded bg-stone-100 px-1.5 py-0.5 text-red-700 dark:bg-stone-800 dark:text-red-300;
 }
@@ -224,61 +279,4 @@ pre[class*='language-'] {
 
 .nobelium-block .nobelium-block {
   @apply mt-1 mb-0;
-}
-
-/* Toggle block */
-
-.nobelium-toggle {
-  @apply w-full;
-  @apply py-0; /* OVERRIDES */
-}
-
-.nobelium-toggle ::marker {
-  content: '';
-}
-
-.nobelium-toggle > summary {
-  @apply flex cursor-pointer items-start rounded-md transition-colors hover:bg-gray-50 dark:hover:bg-gray-900;
-}
-
-.nobelium-toggle-empty > summary {
-  @apply cursor-default;
-}
-
-.nobelium-toggle-triangle {
-  @apply flex-none w-7 text-center;
-  line-height: inherit;
-}
-
-.nobelium-toggle-triangle svg {
-  @apply inline-block fill-current;
-  width: 0.6875em;
-  height: 0.6875em;
-  backface-visibility: hidden;
-  transition: transform 200ms ease-out 0s;
-  transform: rotateZ(90deg);
-}
-
-.nobelium-toggle[open]:not(.nobelium-toggle-empty) > * > .nobelium-toggle-triangle svg {
-  transform: rotateZ(180deg);
-}
-
-.nobelium-toggle-empty > * > .nobelium-toggle-triangle svg {
-  @apply opacity-50;
-}
-
-.nobelium-toggle-title {
-  @apply flex-1;
-}
-
-.nobelium-toggle-content {
-  @apply pl-7 mt-0.5;
-}
-
-.nobelium-toggle-content > * {
-  @apply my-0.5; /* OVERRIDES */
-}
-
-.nobelium-toggle-content > :last-child {
-  @apply mb-0;
 }

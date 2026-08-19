@@ -18,6 +18,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node --test tests/notion-official-blocks.test.mjs",
     "postbuild": "next-sitemap --config next-sitemap.config.js"
   },
   "dependencies": {

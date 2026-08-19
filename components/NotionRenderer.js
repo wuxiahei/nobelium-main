@@ -4,7 +4,6 @@ import { NotionRenderer as Renderer } from 'react-notion-x'
 import { getTextContent } from 'notion-utils'
 import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import { useConfig } from '@/lib/config'
-import Toggle from '@/components/notion-blocks/Toggle'
 import LazyRender from '@/components/LazyRender'
 
 const MermaidBlock = dynamic(() => {
@@ -191,13 +190,7 @@ const components = {
         )
       }
     })
-  }),
-
-  /* Overrides */
-
-  toggle_nobelium: ({ block, children }) => (
-    <Toggle block={block}>{children}</Toggle>
-  )
+  })
 }
 
 const mapPageUrl = id => `https://www.notion.so/${id.replace(/-/g, '')}`
@@ -216,17 +209,6 @@ export default function NotionRenderer (props) {
     'sans-serif': FONTS_SANS,
     'serif': FONTS_SERIF
   }[config.font]
-
-  // Mark block types to be custom rendered by appending a suffix
-  if (props.recordMap) {
-    for (const { value: block } of Object.values(props.recordMap.block)) {
-      switch (block?.type) {
-        case 'toggle':
-          block.type += '_nobelium'
-          break
-      }
-    }
-  }
 
   return (
     <>

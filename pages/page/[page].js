@@ -30,7 +30,7 @@ export async function getStaticProps (context) {
       postsToShow,
       showNext
     },
-    revalidate: 1
+    revalidate: 300
   }
 }
 
@@ -43,7 +43,7 @@ export async function getStaticPaths () {
     paths: Array.from({ length: totalPages - 1 }, (_, i) => ({
       params: { page: '' + (i + 2) }
     })),
-    fallback: true
+    fallback: 'blocking'
   }
 }
 
