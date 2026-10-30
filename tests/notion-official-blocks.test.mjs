@@ -6,11 +6,13 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { NotionRenderer } from 'react-notion-x'
 
 async function loadConverter () {
-  const source = await readFile(
-    new URL('../lib/server/notion-official-blocks.js', import.meta.url),
-    'utf8'
-  )
-  const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`
+  const [source, dependencySource] = await Promise.all([
+    readFile(new URL('../lib/server/notion-official-blocks.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/server/notion-fetch.mjs', import.meta.url), 'utf8')
+  ])
+  const dependencyUrl = `data:text/javascript;base64,${Buffer.from(dependencySource).toString('base64')}`
+  const resolvedSource = source.replace('./notion-fetch.mjs', dependencyUrl)
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(resolvedSource).toString('base64')}`
   return import(moduleUrl)
 }
 
