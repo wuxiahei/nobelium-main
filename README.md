@@ -71,6 +71,7 @@ Required variables:
 | --- | --- |
 | `NOTION_API_KEY` | Notion integration token (recommended) |
 | `NOTION_DATABASE_ID` | Your Notion database ID |
+| `REVALIDATE_SECRET` | Long random secret used by `POST /api/revalidate` |
 
 Legacy variables (only if NOTION_API_KEY is not configured):
 
@@ -92,6 +93,36 @@ pnpm dev
 ```bash
 pnpm build
 ```
+
+## On-demand Revalidation
+
+Pages use incremental static regeneration (ISR) as a fallback. To make a Notion change visible immediately, call the protected revalidation endpoint after publishing.
+
+1. Add `REVALIDATE_SECRET` to the Vercel project's environment variables.
+2. Redeploy so the new environment variable is available.
+3. Send a `POST` request with the same value as a bearer token.
+
+Refresh the whole site from Notion data:
+
+```bash
+curl --fail-with-body -X POST "https://your-site.example/api/revalidate" \
+  -H "Authorization: Bearer $REVALIDATE_SECRET" \
+  -H "Content-Type: application/json" \
+  --data '{}'
+```
+
+Refresh only selected internal paths:
+
+```bash
+curl --fail-with-body -X POST "https://your-site.example/api/revalidate" \
+  -H "Authorization: Bearer $REVALIDATE_SECRET" \
+  -H "Content-Type: application/json" \
+  --data '{"paths":["/","/search","/my-post"]}'
+```
+
+The endpoint accepts only same-site paths. It rejects external URLs, protocol-relative URLs, query strings, and fragments. A full refresh collects the home page, search page, pagination, article/page paths, and tag paths from Notion. The response lists every path that failed instead of reporting a partial refresh as successful.
+
+The existing `revalidate: 300` setting remains in place as a safety net when the endpoint is not called.
 
 ## Configuration
 

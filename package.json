@@ -18,7 +18,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tests/notion-official-blocks.test.mjs tests/post-metadata-normalization.test.mjs tests/ai-message-validation.test.mjs",
+    "test": "node --test tests/notion-official-blocks.test.mjs tests/post-metadata-normalization.test.mjs tests/ai-message-validation.test.mjs tests/revalidation.test.mjs",
     "postbuild": "next-sitemap --config next-sitemap.config.js"
   },
   "dependencies": {
