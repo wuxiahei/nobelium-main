@@ -50,6 +50,9 @@ test('official API blocks render toggle content, tables, links, and rich text', 
       }),
       block('preview-1', 'link_preview', {
         link_preview: { url: 'https://example.com/reference' }
+      }),
+      block('database-1', 'child_database', {
+        child_database: { title: 'Reference database' }
       })
     ],
     'toggle-1': [
@@ -122,6 +125,8 @@ test('official API blocks render toggle content, tables, links, and rich text', 
     assert.match(html, /Taste-Skill/)
     assert.match(html, /Improve UI/)
     assert.match(html, /https:\/\/example.com\/reference/)
+    assert.match(html, /Reference database/)
+    assert.equal(recordMap.block['database-1'].value.type, 'text')
     assert.match(html, /<b>OpenAI Agent SDK<\/b>/)
     assert.match(html, /href="https:\/\/example.com\/agent"/)
     assert.deepEqual(unsupportedBlocks, [])
