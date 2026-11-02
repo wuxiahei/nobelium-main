@@ -1140,3 +1140,370 @@ nav {
   .markdown-body h2 { font-size: 1.45rem; }
   .markdown-body h3 { font-size: 1.22rem; }
 }
+
+/* Admin Markdown writing assistant */
+.admin-editor {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ink-line);
+  border-radius: 0.25rem;
+  background: var(--ink-paper);
+}
+
+.admin-editor:focus-within {
+  border-color: var(--ink-accent);
+}
+
+.admin-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--ink-line);
+  background: var(--ink-surface);
+}
+
+.admin-editor-toolbar-group {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-editor-tool,
+.admin-editor-mode,
+.admin-editor-select {
+  min-height: 2.25rem;
+  border: 1px solid var(--ink-line);
+  border-radius: 0.22rem;
+  color: var(--ink-main);
+  background: var(--ink-paper);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.admin-editor-tool,
+.admin-editor-mode {
+  padding: 0.5rem 0.7rem;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.admin-editor-tool:hover,
+.admin-editor-mode:hover {
+  border-color: var(--ink-accent);
+  background: var(--ink-accent-soft);
+}
+
+.admin-editor-tool {
+  min-width: 2.25rem;
+}
+
+.admin-editor-select {
+  max-width: 11.5rem;
+  padding: 0.45rem 1.8rem 0.45rem 0.6rem;
+  outline: none;
+}
+
+.admin-editor-select:focus {
+  border-color: var(--ink-accent);
+}
+
+.admin-editor-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-editor-modes {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--ink-line);
+  border-radius: 0.22rem;
+}
+
+.admin-editor-mode {
+  min-height: 2.1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-editor-mode + .admin-editor-mode {
+  border-left: 1px solid var(--ink-line);
+}
+
+.admin-editor-mode-active,
+.admin-editor-mode-active:hover {
+  color: var(--ink-paper);
+  background: var(--ink-main);
+}
+
+.admin-image-panel {
+  padding: 0.9rem;
+  border-bottom: 1px solid var(--ink-line);
+  background: color-mix(in srgb, var(--ink-accent-soft) 55%, var(--ink-surface));
+}
+
+.admin-editor-workspace {
+  display: grid;
+  min-width: 0;
+  background: var(--ink-paper);
+}
+
+.admin-editor-workspace-split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.admin-editor-workspace-edit,
+.admin-editor-workspace-preview {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-editor-textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 34rem;
+  resize: vertical;
+  border: 0;
+  border-radius: 0;
+  padding: 1rem 1.1rem 2rem;
+  outline: none;
+  color: var(--ink-main);
+  background: var(--ink-paper);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  tab-size: 2;
+}
+
+.admin-editor-workspace-split .admin-editor-textarea {
+  border-right: 1px solid var(--ink-line);
+}
+
+.admin-editor-preview {
+  min-width: 0;
+  min-height: 34rem;
+  max-height: 54rem;
+  overflow: auto;
+  background: var(--ink-surface);
+}
+
+.admin-editor-preview-label {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--ink-line);
+  color: var(--ink-muted);
+  background: color-mix(in srgb, var(--ink-surface) 92%, transparent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.admin-editor-preview-body {
+  min-width: 0;
+  padding: 1.1rem 1.25rem 2.5rem;
+}
+
+.admin-editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 1rem;
+  padding: 0.55rem 0.75rem;
+  border-top: 1px solid var(--ink-line);
+  color: var(--ink-muted);
+  background: var(--ink-surface);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.admin-editor-shortcut {
+  margin-left: auto;
+}
+
+/* Fold blocks */
+.markdown-body .markdown-fold {
+  clear: both;
+  margin: 1.25rem 0;
+  overflow: hidden;
+  border: 1px solid var(--ink-line);
+  border-radius: 0.25rem;
+  background: var(--ink-surface);
+}
+
+.markdown-body .markdown-fold summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.8rem 0.95rem;
+  color: var(--ink-main);
+  font-weight: 650;
+  user-select: none;
+}
+
+.markdown-body .markdown-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.markdown-body .markdown-fold summary::before {
+  content: '';
+  width: 0.42rem;
+  height: 0.42rem;
+  flex: 0 0 auto;
+  border-right: 1.5px solid var(--ink-accent);
+  border-bottom: 1.5px solid var(--ink-accent);
+  transform: rotate(-45deg);
+  transition: transform 150ms ease;
+}
+
+.markdown-body .markdown-fold[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.markdown-body .markdown-fold[open] summary {
+  border-bottom: 1px solid var(--ink-line);
+  background: var(--ink-accent-soft);
+}
+
+.markdown-body .markdown-fold-body {
+  padding: 0.1rem 1rem 1rem;
+}
+
+.markdown-body .markdown-fold-body > :first-child {
+  margin-top: 0.8rem;
+}
+
+.markdown-body .markdown-fold-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* Markdown image placement */
+.markdown-body .markdown-image {
+  display: block;
+  max-width: 100%;
+  margin: 1.35rem auto;
+}
+
+.markdown-body .markdown-image img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+  border-radius: 0.25rem;
+}
+
+.markdown-body .markdown-image-default img {
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.markdown-body .markdown-image-caption {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.markdown-body .markdown-image-left,
+.markdown-body .markdown-image-right {
+  margin-top: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body .markdown-image-left {
+  float: left;
+  margin-right: 1.35rem;
+  margin-left: 0;
+}
+
+.markdown-body .markdown-image-right {
+  float: right;
+  margin-left: 1.35rem;
+  margin-right: 0;
+}
+
+.markdown-body .markdown-image-center {
+  width: min(80%, 42rem);
+}
+
+.markdown-body .markdown-image-full {
+  clear: both;
+  width: 100%;
+  max-width: none;
+}
+
+@media (max-width: 900px) {
+  .admin-editor-workspace-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-editor-workspace-split .admin-editor-textarea {
+    min-height: 28rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--ink-line);
+  }
+
+  .admin-editor-preview {
+    min-height: 24rem;
+    max-height: 46rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-editor-toolbar {
+    align-items: stretch;
+    padding: 0.55rem;
+  }
+
+  .admin-editor-toolbar-group {
+    width: 100%;
+  }
+
+  .admin-editor-select {
+    max-width: none;
+    flex: 1 1 11rem;
+  }
+
+  .admin-editor-modes {
+    margin-left: auto;
+  }
+
+  .admin-editor-textarea {
+    min-height: 25rem;
+    padding: 0.85rem;
+  }
+
+  .admin-editor-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-editor-shortcut {
+    margin-left: 0;
+  }
+
+  .markdown-body .markdown-image-left,
+  .markdown-body .markdown-image-right,
+  .markdown-body .markdown-image-center,
+  .markdown-body .markdown-image-full {
+    float: none;
+    width: 100% !important;
+    max-width: 100%;
+    margin: 1.1rem 0;
+  }
+}

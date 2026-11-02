@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Head from 'next/head'
 import Container from '@/components/Container'
+import AdminMarkdownEditor from '@/components/AdminMarkdownEditor'
 
 const EMPTY_FORM = {
   title: '',
@@ -26,6 +27,7 @@ export default function AdminPage () {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const loadPosts = useCallback(async () => {
     setLoadingPosts(true)
@@ -217,7 +219,7 @@ export default function AdminPage () {
           {!checkingSession && !session?.configured && (
             <StatusCard tone="warning">
               <strong>管理员账户尚未配置。</strong>
-              <span className="mt-2 block">请在 Vercel 环境变量中设置 ADMIN_USERNAME、ADMIN_PASSWORD（或 ADMIN_PASSWORD_HASH）和至少 32 位 ADMIN_SESSION_SECRET。</span>
+              <span className="mt-2 block">请在 Vercel 环境变量中设置 ADMIN_USERNAME、ADMIN_PASSWORD_HASH、ADMIN_SESSION_SECRET（至少 32 位）。不建议使用明文 ADMIN_PASSWORD。</span>
             </StatusCard>
           )}
 
@@ -238,14 +240,25 @@ export default function AdminPage () {
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
                   <span>密码</span>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={event => setPassword(event.target.value)}
-                    autoComplete="current-password"
-                    required
-                    className="h-11 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 text-base outline-none focus:border-[var(--ink-accent)]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={event => setPassword(event.target.value)}
+                      autoComplete="current-password"
+                      required
+                      className="h-11 w-full rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 pr-16 text-base outline-none focus:border-[var(--ink-accent)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(current => !current)}
+                      aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                      className="absolute inset-y-0 right-0 px-3 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink-main)]"
+                    >
+                      {showPassword ? '隐藏' : '显示'}
+                    </button>
+                  </div>
+                  <span className="text-xs font-normal leading-5 text-[var(--ink-muted)]">密码通过 HTTPS 发送到服务端，并与 ADMIN_PASSWORD_HASH 校验；哈希不可逆，不会被“解密”。</span>
                 </label>
                 {error && <InlineError>{error}</InlineError>}
                 <button type="submit" disabled={loggingIn} className="ink-command ink-command-primary disabled:opacity-60">
@@ -328,10 +341,10 @@ export default function AdminPage () {
                     <input value={form.tags} onChange={event => updateField('tags', event.target.value)} placeholder="Next.js, Vercel" className="h-11 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 text-base outline-none focus:border-[var(--ink-accent)]" />
                   </label>
 
-                  <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
+                  <div className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
                     <span>正文（Markdown）</span>
-                    <textarea value={form.content} onChange={event => updateField('content', event.target.value)} maxLength={60000} rows={24} spellCheck="false" className="resize-y rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 py-3 font-mono text-sm leading-7 outline-none focus:border-[var(--ink-accent)]" />
-                  </label>
+                    <AdminMarkdownEditor value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />
+                  </div>
 
                   {error && <InlineError>{error}</InlineError>}
                   {message && <p className="rounded-sm border border-[var(--ink-accent)] bg-[var(--ink-accent-soft)] px-3 py-2 text-sm text-[var(--ink-accent)]" role="status">{message}</p>}
