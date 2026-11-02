@@ -2,7 +2,7 @@ const BLOG = {
   title: 'Ely',
   author: 'Ely',
   email: '',
-  link: 'https://nobelium.vercel.app',
+  link: 'https://wuxiahei.vercel.app',
   description: '记录技术、设计与持续思考的个人知识札记。',
   lang: 'zh-CN', // ['en-US', 'zh-CN', 'zh-HK', 'zh-TW', 'ja-JP', 'es-ES']
   timezone: 'Asia/Shanghai', // Your Notion posts' date will be interpreted as this timezone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for all options.
@@ -39,7 +39,8 @@ const BLOG = {
   },
   comment: {
     // support provider: gitalk, utterances, cusdis
-    provider: '', // leave it empty if you don't need any comment plugin
+    // Cusdis allows guests to comment with only a nickname.
+    provider: 'cusdis', // leave it empty if you don't need any comment plugin
     gitalkConfig: {
       repo: '', // The repository of store comments
       owner: '',
@@ -49,11 +50,11 @@ const BLOG = {
       distractionFreeMode: false
     },
     utterancesConfig: {
-      repo: ''
+      repo: 'wuxiahei/nobelium-main'
     },
     cusdisConfig: {
-      appId: '', // data-app-id
-      host: 'https://cusdis.com', // data-host, change this if you're using self-hosted version
+      appId: process.env.CUSDIS_APP_ID || '', // Public App ID from the Cusdis dashboard
+      host: process.env.CUSDIS_HOST || 'https://cusdis.com', // data-host, change this if you're using self-hosted version
       scriptSrc: 'https://cusdis.com/js/cusdis.es.js' // change this if you're using self-hosted version
     }
   },

@@ -12,7 +12,11 @@
   },
   "POST": {
     "BACK": "返回",
-    "TOP": "回到顶部"
+    "TOP": "回到顶部",
+    "COMMENTS": "留言",
+    "COMMENTS_LOADING": "滚动到这里后加载留言。",
+    "COMMENTS_GUEST_HINT": "无需登录，填写昵称即可留言。",
+    "COMMENTS_UNAVAILABLE": "留言功能尚未配置，请站长完成 Cusdis 设置后再试。"
   },
   "PAGE": {
     "ERROR_404": {

@@ -12,7 +12,11 @@
   },
   "POST": {
     "BACK": "Atrás",
-    "TOP": "Arriba"
+    "TOP": "Arriba",
+    "COMMENTS": "Comentarios",
+    "COMMENTS_LOADING": "Los comentarios se cargan al desplazarte hasta aquí.",
+    "COMMENTS_GUEST_HINT": "No necesitas iniciar sesión. Solo escribe un apodo para comentar.",
+    "COMMENTS_UNAVAILABLE": "Los comentarios aún no están disponibles. El administrador debe completar la configuración de Cusdis."
   },
   "PAGE": {
     "ERROR_404": {

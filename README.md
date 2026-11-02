@@ -72,6 +72,7 @@ Required variables:
 | `NOTION_API_KEY` | Notion integration token (recommended) |
 | `NOTION_DATABASE_ID` | Your Notion database ID |
 | `REVALIDATE_SECRET` | Long random secret used by `POST /api/revalidate` |
+| `CUSDIS_APP_ID` | Public Cusdis App ID for guest comments |
 
 Legacy variables (only if NOTION_API_KEY is not configured):
 
@@ -123,6 +124,17 @@ curl --fail-with-body -X POST "https://your-site.example/api/revalidate" \
 The endpoint accepts only same-site paths. It rejects external URLs, protocol-relative URLs, query strings, and fragments. A full refresh collects the home page, search page, pagination, article/page paths, and tag paths from Notion. The response lists every path that failed instead of reporting a partial refresh as successful.
 
 The existing `revalidate: 300` setting remains in place as a safety net when the endpoint is not called.
+
+## Guest Comments
+
+The default comment provider is Cusdis, so visitors can comment with only a nickname instead of signing in with GitHub.
+
+1. Create a site in the [Cusdis dashboard](https://cusdis.com/dashboard).
+2. Copy the site's App ID.
+3. Add `CUSDIS_APP_ID` to the Vercel project's environment variables.
+4. Redeploy. If you use a self-hosted Cusdis instance, also set `CUSDIS_HOST`.
+
+The App ID is a public identifier and is intentionally included in the browser configuration. To switch back to another provider, change `comment.provider` in `blog.config.js`.
 
 ## Configuration
 

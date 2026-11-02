@@ -12,7 +12,11 @@
   },
   "POST": {
     "BACK": "戻る",
-    "TOP": "トップに戻る"
+    "TOP": "トップに戻る",
+    "COMMENTS": "コメント",
+    "COMMENTS_LOADING": "ここまでスクロールするとコメントが読み込まれます。",
+    "COMMENTS_GUEST_HINT": "ログイン不要。ニックネームを入力するだけでコメントできます。",
+    "COMMENTS_UNAVAILABLE": "コメント機能はまだ設定されていません。サイト管理者が Cusdis の設定を完了してください。"
   },
   "PAGE": {
     "ERROR_404": {

@@ -12,7 +12,11 @@
   },
   "POST": {
     "BACK": "Back",
-    "TOP": "Top"
+    "TOP": "Top",
+    "COMMENTS": "Comments",
+    "COMMENTS_LOADING": "Comments load when you scroll here.",
+    "COMMENTS_GUEST_HINT": "No sign-in required. Just enter a nickname to leave a comment.",
+    "COMMENTS_UNAVAILABLE": "Comments are not available yet. The site owner needs to finish the Cusdis setup."
   },
   "PAGE": {
     "ERROR_404": {
