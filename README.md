@@ -72,7 +72,8 @@ Required variables:
 | `NOTION_API_KEY` | Notion integration token (recommended) |
 | `NOTION_DATABASE_ID` | Your Notion database ID |
 | `REVALIDATE_SECRET` | Long random secret used by `POST /api/revalidate` |
-| `CUSDIS_APP_ID` | Public Cusdis App ID for guest comments |
+| `COMMENTS_GITHUB_REPO` | Repository that stores guest comments as GitHub Issues |
+| `COMMENTS_GITHUB_TOKEN` | Server-only GitHub token with Issues read/write access |
 
 Legacy variables (only if NOTION_API_KEY is not configured):
 
@@ -127,14 +128,21 @@ The existing `revalidate: 300` setting remains in place as a safety net when the
 
 ## Guest Comments
 
-The default comment provider is Cusdis, so visitors can comment with only a nickname instead of signing in with GitHub.
+The default comment provider stores guest comments as GitHub Issues, so no separate database is required. Visitors do not need a GitHub account: the Vercel API uses a server-side token to write their nickname and comment to GitHub Issues on their behalf.
 
-1. Create a site in the [Cusdis dashboard](https://cusdis.com/dashboard).
-2. Copy the site's App ID.
-3. Add `CUSDIS_APP_ID` to the Vercel project's environment variables.
-4. Redeploy. If you use a self-hosted Cusdis instance, also set `CUSDIS_HOST`.
+1. Create a repository with Issues enabled, for example `wuxiahei/nobelium-comments`. A private repository also works.
+2. Create a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new) limited to that repository.
+3. Grant the token `Issues: Read and write` and `Metadata: Read-only`. Do not grant repository contents write access.
+4. Add these variables in Vercel under Project Settings → Environment Variables:
+   - `COMMENTS_GITHUB_REPO=wuxiahei/nobelium-comments`
+   - `COMMENTS_GITHUB_TOKEN=<the fine-grained token>`
+5. Redeploy the project, open an article, and submit a test comment.
 
-The App ID is a public identifier and is intentionally included in the browser configuration. To switch back to another provider, change `comment.provider` in `blog.config.js`.
+Each article creates one issue titled `[Blog comments] <stable id>`. Each guest comment is stored as a comment on that issue. To moderate a comment, edit or delete it in GitHub; it will disappear from the blog immediately on the next request. Deleting the issue removes every comment for that article.
+
+`COMMENTS_GITHUB_REPO` is public configuration. `COMMENTS_GITHUB_TOKEN` is read only inside the server-side API and is never sent to the browser. The site also applies a best-effort in-memory rate limit and a hidden spam honeypot; Vercel serverless instances may reset this limit, so use GitHub's issue controls if abuse occurs.
+
+To switch back to another provider, change `comment.provider` in `blog.config.js`. Supported values are `github`, `gitalk`, and `utterances`.
 
 ## Configuration
 

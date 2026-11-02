@@ -16,7 +16,20 @@
     "COMMENTS": "Comentarios",
     "COMMENTS_LOADING": "Los comentarios se cargan al desplazarte hasta aquí.",
     "COMMENTS_GUEST_HINT": "No necesitas iniciar sesión. Solo escribe un apodo para comentar.",
-    "COMMENTS_UNAVAILABLE": "Los comentarios aún no están disponibles. El administrador debe completar la configuración de Cusdis."
+    "COMMENTS_UNAVAILABLE": "Los comentarios aún no están disponibles. El administrador debe configurar un repositorio de GitHub Issues para los comentarios.",
+    "COMMENTS_FORM_TITLE": "Deja un comentario",
+    "COMMENTS_FORM_HINT": "No necesitas iniciar sesión. Tu apodo y comentario serán públicos.",
+    "COMMENTS_NICKNAME": "Apodo",
+    "COMMENTS_NICKNAME_PLACEHOLDER": "¿Cómo te llamamos?",
+    "COMMENTS_CONTENT": "Comentario",
+    "COMMENTS_CONTENT_PLACEHOLDER": "Comparte lo que piensas...",
+    "COMMENTS_SUBMIT": "Publicar comentario",
+    "COMMENTS_SUBMITTING": "Publicando...",
+    "COMMENTS_EMPTY": "Todavía no hay comentarios. Sé el primero en escribir uno.",
+    "COMMENTS_LOAD_ERROR": "No se pudieron cargar los comentarios. Actualiza e inténtalo de nuevo.",
+    "COMMENTS_SUBMIT_ERROR": "No se pudo publicar tu comentario. Inténtalo de nuevo más tarde.",
+    "COMMENTS_SUCCESS": "Tu comentario se ha publicado.",
+    "COMMENTS_COUNT": "comentarios"
   },
   "PAGE": {
     "ERROR_404": {

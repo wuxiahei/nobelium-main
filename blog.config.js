@@ -38,9 +38,9 @@ const BLOG = {
     }
   },
   comment: {
-    // support provider: gitalk, utterances, cusdis
-    // Cusdis allows guests to comment with only a nickname.
-    provider: 'cusdis', // leave it empty if you don't need any comment plugin
+    // support provider: github, gitalk, utterances
+    // github stores guest comments in GitHub Issues through a server-side token.
+    provider: 'github', // leave it empty if you don't need any comment plugin
     gitalkConfig: {
       repo: '', // The repository of store comments
       owner: '',
@@ -52,10 +52,12 @@ const BLOG = {
     utterancesConfig: {
       repo: 'wuxiahei/nobelium-main'
     },
-    cusdisConfig: {
-      appId: process.env.CUSDIS_APP_ID || '', // Public App ID from the Cusdis dashboard
-      host: process.env.CUSDIS_HOST || 'https://cusdis.com', // data-host, change this if you're using self-hosted version
-      scriptSrc: 'https://cusdis.com/js/cusdis.es.js' // change this if you're using self-hosted version
+    githubConfig: {
+      repo: process.env.COMMENTS_GITHUB_REPO || '', // Public owner/repository name
+      configured: Boolean(
+        process.env.COMMENTS_GITHUB_REPO &&
+        process.env.COMMENTS_GITHUB_TOKEN
+      )
     }
   },
   isProd: process.env.VERCEL_ENV === 'production' // distinguish between development and production environment (ref: https://vercel.com/docs/environment-variables#system-environment-variables)

@@ -16,7 +16,20 @@
     "COMMENTS": "留言",
     "COMMENTS_LOADING": "捲動到這裏後載入留言。",
     "COMMENTS_GUEST_HINT": "毋須登入，填寫暱稱即可留言。",
-    "COMMENTS_UNAVAILABLE": "留言功能尚未設定，請站長完成 Cusdis 設定後再試。"
+    "COMMENTS_UNAVAILABLE": "留言功能尚未設定，請站長設定 GitHub Issues 留言儲存庫。",
+    "COMMENTS_FORM_TITLE": "寫低留言",
+    "COMMENTS_FORM_HINT": "毋須登入，暱稱和留言會公開展示。",
+    "COMMENTS_NICKNAME": "暱稱",
+    "COMMENTS_NICKNAME_PLACEHOLDER": "點稱呼你？",
+    "COMMENTS_CONTENT": "留言",
+    "COMMENTS_CONTENT_PLACEHOLDER": "寫低你嘅想法……",
+    "COMMENTS_SUBMIT": "發布留言",
+    "COMMENTS_SUBMITTING": "正在發布……",
+    "COMMENTS_EMPTY": "仲未有留言，嚟寫第一條啦。",
+    "COMMENTS_LOAD_ERROR": "留言載入失敗，請重新整理後再試。",
+    "COMMENTS_SUBMIT_ERROR": "留言提交失敗，請遲啲再試。",
+    "COMMENTS_SUCCESS": "留言已發布。",
+    "COMMENTS_COUNT": "則留言"
   },
   "PAGE": {
     "ERROR_404": {

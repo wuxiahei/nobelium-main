@@ -16,7 +16,20 @@
     "COMMENTS": "コメント",
     "COMMENTS_LOADING": "ここまでスクロールするとコメントが読み込まれます。",
     "COMMENTS_GUEST_HINT": "ログイン不要。ニックネームを入力するだけでコメントできます。",
-    "COMMENTS_UNAVAILABLE": "コメント機能はまだ設定されていません。サイト管理者が Cusdis の設定を完了してください。"
+    "COMMENTS_UNAVAILABLE": "コメント機能はまだ設定されていません。サイト管理者が GitHub Issues のコメント保存リポジトリを設定してください。",
+    "COMMENTS_FORM_TITLE": "コメントを書く",
+    "COMMENTS_FORM_HINT": "ログイン不要です。ニックネームとコメントは公開されます。",
+    "COMMENTS_NICKNAME": "ニックネーム",
+    "COMMENTS_NICKNAME_PLACEHOLDER": "お名前は？",
+    "COMMENTS_CONTENT": "コメント",
+    "COMMENTS_CONTENT_PLACEHOLDER": "考えを書いてください……",
+    "COMMENTS_SUBMIT": "コメントを投稿",
+    "COMMENTS_SUBMITTING": "投稿中……",
+    "COMMENTS_EMPTY": "まだコメントはありません。最初のコメントを書いてみましょう。",
+    "COMMENTS_LOAD_ERROR": "コメントを読み込めませんでした。再読み込みしてもう一度お試しください。",
+    "COMMENTS_SUBMIT_ERROR": "コメントを投稿できませんでした。しばらくしてからもう一度お試しください。",
+    "COMMENTS_SUCCESS": "コメントを投稿しました。",
+    "COMMENTS_COUNT": "件のコメント"
   },
   "PAGE": {
     "ERROR_404": {
