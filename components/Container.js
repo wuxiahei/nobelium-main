@@ -79,7 +79,8 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
         />
         <main className={cn(
           'page-stage flex-grow transition-all',
-          layout !== 'blog' && ['self-center px-4 sm:px-6', fullWidth ? 'md:px-24' : 'w-full max-w-3xl']
+          fullWidth ? null : 'site-shell',
+          layout !== 'blog' && !fullWidth && 'px-4 sm:px-6 lg:px-8'
         )}>
           {children}
         </main>

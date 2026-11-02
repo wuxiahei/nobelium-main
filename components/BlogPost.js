@@ -12,23 +12,18 @@ const BlogPost = ({ post }) => {
       href={`${BLOG.path}/${post.slug}`}
       className="group -mx-3 block border-b border-[var(--ink-line)] px-3 py-6 transition-colors hover:bg-[var(--ink-surface)] ink-focus md:py-7"
     >
-      <article key={post.id} className="transition duration-200 md:grid md:grid-cols-[148px_minmax(0,1fr)] md:gap-8">
+      <article key={post.id} className="transition duration-200 md:grid md:grid-cols-[148px_minmax(0,1fr)] md:gap-8 xl:grid-cols-[140px_minmax(0,1fr)_minmax(22rem,0.85fr)]">
         <div className="mb-3 text-[0.78rem] uppercase tracking-normal text-[var(--ink-muted)] md:mb-0 md:pt-1">
           <time className="block">
             <FormattedDate date={post.date} />
           </time>
         </div>
-        <div>
+        <div className="min-w-0">
           <header>
             <h2 className="text-xl font-semibold leading-snug tracking-normal text-[var(--ink-main)] transition-colors group-hover:text-[var(--ink-accent)] md:text-[1.45rem]">
               {post.title}
             </h2>
           </header>
-          {shouldShowSummary && (
-            <p className="mt-3 max-w-2xl line-clamp-2 leading-8 text-[var(--ink-muted)]">
-              {summary}
-            </p>
-          )}
           {post.tags && post.tags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {post.tags.slice(0, 3).map(tag => (
@@ -42,6 +37,11 @@ const BlogPost = ({ post }) => {
             </div>
           )}
         </div>
+        {shouldShowSummary && (
+          <p className="mt-3 line-clamp-2 max-w-2xl leading-8 text-[var(--ink-muted)] md:col-start-2 md:mt-0 md:pt-1 xl:col-start-3 xl:row-start-1 xl:max-w-none">
+            {summary}
+          </p>
+        )}
       </article>
     </Link>
   )

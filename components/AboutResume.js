@@ -6,7 +6,7 @@ export default function AboutResume ({ post, emailHash }) {
   const BLOG = useConfig()
 
   return (
-    <section className="about-resume mx-auto w-full max-w-3xl px-4 sm:px-6">
+    <section className="about-resume mx-auto w-full max-w-5xl px-4 sm:px-6">
       <div className="about-intro relative overflow-hidden p-6 sm:p-8">
         <div className="about-ink-mark" aria-hidden="true" />
         <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center">

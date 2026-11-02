@@ -197,7 +197,7 @@ export default function AdminPage () {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <Container title="写作后台 · 管理员" description="Nobelium 管理员写作后台" headerMeta="管理员">
-        <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+        <section className="w-full pb-16">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[var(--ink-line)] pb-5">
             <div>
               <p className="ink-eyebrow mb-2">Admin</p>
@@ -258,7 +258,6 @@ export default function AdminPage () {
                       {showPassword ? '隐藏' : '显示'}
                     </button>
                   </div>
-                  <span className="text-xs font-normal leading-5 text-[var(--ink-muted)]">密码通过 HTTPS 发送到服务端，并与 ADMIN_PASSWORD_HASH 校验；哈希不可逆，不会被“解密”。</span>
                 </label>
                 {error && <InlineError>{error}</InlineError>}
                 <button type="submit" disabled={loggingIn} className="ink-command ink-command-primary disabled:opacity-60">
@@ -269,8 +268,8 @@ export default function AdminPage () {
           )}
 
           {session?.authenticated && (
-            <div className="grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
-              <aside className="rounded-sm border border-[var(--ink-line)] bg-[var(--ink-surface)] p-4">
+            <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+              <aside className="rounded-sm border border-[var(--ink-line)] bg-[var(--ink-surface)] p-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
                 <button type="button" className="ink-command ink-command-primary w-full" onClick={startNewPost}>新建文章</button>
                 <div className="mt-5 flex items-center justify-between text-xs uppercase tracking-wide text-[var(--ink-muted)]">
                   <span>GitHub 文章</span>

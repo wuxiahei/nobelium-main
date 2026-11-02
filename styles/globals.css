@@ -100,6 +100,12 @@ body::-webkit-scrollbar-thumb {
   overflow-x: clip;
 }
 
+.site-shell {
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+}
+
 .page-stage {
   animation: page-reveal 420ms ease-out both;
 }
@@ -964,7 +970,6 @@ nav {
   }
 
   .sticky-nav-full {
-    max-width: 100%;
     border-bottom: 1px solid var(--ink-line);
   }
   .header-name {
