@@ -112,7 +112,6 @@ export default function Header ({ navBarTitle, headerMeta, fullWidth }) {
             className="ely-brand ink-focus transition hover:opacity-90"
           >
             <span className="ely-brand-mark" aria-hidden="true">
-              <span className="ely-brand-kicker">墨间札记</span>
               <span className="ely-brand-name">Ely</span>
               {headerMeta && <span className="ely-brand-meta">{headerMeta}</span>}
             </span>

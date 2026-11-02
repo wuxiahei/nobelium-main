@@ -13,7 +13,6 @@ export default function HomeHero ({ postCount }) {
         <span className="home-ink-seal">E</span>
       </div>
       <div className="home-hero-copy">
-        <p className="ink-eyebrow">Ely · 墨间札记</p>
         <h1 id="home-hero-title">在纸墨之间，整理持续生长的思考。</h1>
         <p className="home-hero-description">
           {BLOG.description || '记录技术、设计与持续思考的个人知识札记。'}
