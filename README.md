@@ -138,7 +138,7 @@ The default comment provider stores guest comments as GitHub Issues, so no separ
    - `COMMENTS_GITHUB_TOKEN=<the fine-grained token>`
 5. Redeploy the project, open an article, and submit a test comment.
 
-Each article creates one issue titled `[Blog comments] <stable id>`. Each guest comment is stored as a comment on that issue. To moderate a comment, edit or delete it in GitHub; it will disappear from the blog immediately on the next request. Deleting the issue removes every comment for that article.
+Each article creates one issue titled `[Blog comments] <stable id>`. Each guest comment is stored as a comment on that issue. To moderate a comment, delete it in GitHub; it will disappear from the blog immediately on the next request. Deleting the issue removes every comment for that article.
 
 `COMMENTS_GITHUB_REPO` is public configuration. `COMMENTS_GITHUB_TOKEN` is read only inside the server-side API and is never sent to the browser. The site also applies a best-effort in-memory rate limit and a hidden spam honeypot; Vercel serverless instances may reset this limit, so use GitHub's issue controls if abuse occurs.
 
