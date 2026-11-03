@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
+import MarkdownCodeBlock from '@/components/MarkdownCodeBlock'
+import { createMarkdownHeadingId } from '@/lib/markdown-outline.mjs'
 
 const components = {
   a ({ href, children, ...props }) {
@@ -45,13 +47,31 @@ const components = {
       </div>
     )
   },
+  pre ({ children }) {
+    const codeElement = Children.toArray(children)[0]
+    if (!codeElement?.props) return <pre>{children}</pre>
+
+    const code = extractText(codeElement).replace(/\n$/, '')
+    return <MarkdownCodeBlock code={code} className={codeElement.props.className} />
+  },
   img ({ alt = '', title = '', src = '', ...props }) {
     const image = parseImageMeta(title)
     const width = image.width ? { width: image.width + '%' } : undefined
     return (
       <span className={'markdown-image markdown-image-' + (image.managed ? image.position : 'default')} style={width} role="figure">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} title={image.managed ? undefined : title} loading="lazy" decoding="async" {...props} />
+        <img
+          src={src}
+          alt={alt}
+          title={image.managed ? undefined : title}
+          loading="lazy"
+          decoding="async"
+          role="button"
+          tabIndex={0}
+          aria-label={alt ? `放大图片：${alt}` : '放大图片'}
+          data-zoomable="true"
+          {...props}
+        />
         {image.managed && alt ? <span className="markdown-image-caption">{alt}</span> : null}
       </span>
     )
@@ -63,13 +83,34 @@ export default function MarkdownRenderer ({ content }) {
     <div className="markdown-body">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[rehypeHeadingIds, rehypeKatex]}
         components={components}
       >
         {content || ''}
       </ReactMarkdown>
     </div>
   )
+}
+
+function rehypeHeadingIds () {
+  return tree => {
+    const usedIds = new Map()
+    for (const node of tree.children || []) {
+      if (!/^h[1-6]$/.test(node.tagName || '')) continue
+      const text = extractHastText(node).trim()
+      if (!text) continue
+      node.properties = {
+        ...(node.properties || {}),
+        id: createMarkdownHeadingId(text, usedIds)
+      }
+    }
+  }
+}
+
+function extractHastText (node) {
+  if (!node) return ''
+  if (typeof node.value === 'string') return node.value
+  return (node.children || []).map(extractHastText).join('')
 }
 
 function extractText (node) {

@@ -7,7 +7,7 @@ export default function Tag ({ tags, posts, currentTag }) {
 
 export async function getStaticProps ({ params }) {
   const currentTag = params.tag
-  const posts = await getAllPosts({ includePages: false })
+  const posts = await getAllPosts({ includePages: false, includeSearchText: true })
   const tags = getAllTagsFromPosts(posts)
   const filteredPosts = posts.filter(
     post => post && post.tags && post.tags.includes(currentTag)

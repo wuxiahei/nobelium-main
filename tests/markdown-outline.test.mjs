@@ -33,6 +33,18 @@ test('ignores headings inside fenced code blocks', () => {
   ])
 })
 
+test('creates stable unique IDs for Chinese and duplicate headings', () => {
+  const markdown = '# 你好，世界\n## Vercel 缓存\n## Vercel 缓存\n### C++ / Node.js'
+  const headings = extractMarkdownHeadings(markdown)
+
+  assert.deepEqual(headings.map(heading => heading.id), [
+    '你好-世界',
+    'vercel-缓存',
+    'vercel-缓存-2',
+    'c-node-js'
+  ])
+})
+
 test('handles empty and malformed heading-like lines safely', () => {
   assert.deepEqual(extractMarkdownHeadings('#\n####### too deep\n    # indented code\n#no-space'), [])
   assert.deepEqual(extractMarkdownHeadings(''), [])
