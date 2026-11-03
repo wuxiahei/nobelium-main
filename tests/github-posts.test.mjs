@@ -6,7 +6,8 @@ import {
   getGitHubContentConfig,
   listGitHubPosts,
   parseFrontMatter,
-  parseGitHubIssue
+  parseGitHubIssue,
+  updateGitHubPost
 } from '../lib/server/github-posts.mjs'
 
 const CONTENT_ENV_KEYS = [
@@ -223,4 +224,93 @@ test('rejects publishing an empty body before calling GitHub', async t => {
     () => createGitHubPost({ title: 'Empty published post', content: '', draft: false }),
     error => error instanceof GitHubContentError && /必须有正文/.test(error.message)
   )
+})
+
+test('rejects a stale update without overwriting the GitHub issue', async t => {
+  t.after(() => {
+    restoreEnv(CONTENT_ENV_KEYS, originalEnv)
+    globalThis.fetch = originalFetch
+  })
+  const originalFetch = globalThis.fetch
+  applyEnv({
+    CONTENT_GITHUB_REPO: 'owner/posts',
+    CONTENT_GITHUB_TOKEN: 'server-only-token'
+  })
+
+  let patched = false
+  const calls = []
+  globalThis.fetch = async (url, options = {}) => {
+    const parsedUrl = new URL(String(url))
+    calls.push({ url: parsedUrl, options })
+    if ((options.method || 'GET') === 'GET' && parsedUrl.pathname.endsWith('/issues/1')) {
+      return mockResponse(makeIssue({
+        updated_at: '2026-11-03T11:00:00Z'
+      }))
+    }
+    if (options.method === 'PATCH') patched = true
+    throw new Error('Unexpected request: ' + (options.method || 'GET') + ' ' + url)
+  }
+
+  await assert.rejects(
+    () => updateGitHubPost(1, {
+      title: 'Edited elsewhere',
+      content: 'Local content',
+      draft: false,
+      expectedUpdatedAt: '2026-11-03T10:00:00Z'
+    }),
+    error => error instanceof GitHubContentError &&
+      error.status === 409 &&
+      /其他标签页或 GitHub/.test(error.message)
+  )
+
+  assert.equal(patched, false)
+  assert.equal(calls.length, 1)
+})
+
+test('updates an issue when the expected online version still matches', async t => {
+  t.after(() => {
+    restoreEnv(CONTENT_ENV_KEYS, originalEnv)
+    globalThis.fetch = originalFetch
+  })
+  const originalFetch = globalThis.fetch
+  applyEnv({
+    CONTENT_GITHUB_REPO: 'owner/posts',
+    CONTENT_GITHUB_TOKEN: 'server-only-token'
+  })
+
+  const calls = []
+  globalThis.fetch = async (url, options = {}) => {
+    const parsedUrl = new URL(String(url))
+    calls.push({ url: parsedUrl, options })
+    if ((options.method || 'GET') === 'GET' && parsedUrl.pathname.endsWith('/issues/1')) {
+      return mockResponse(makeIssue({
+        updated_at: '2026-11-03T10:00:00Z'
+      }))
+    }
+    if ((options.method || 'GET') === 'GET' && parsedUrl.pathname.includes('/labels/')) {
+      return mockResponse({ name: parsedUrl.pathname.split('/').pop() })
+    }
+    if (options.method === 'PATCH' && parsedUrl.pathname.endsWith('/issues/1')) {
+      const payload = JSON.parse(options.body)
+      return mockResponse(makeIssue({
+        ...payload,
+        updated_at: '2026-11-03T12:00:00Z'
+      }))
+    }
+    throw new Error('Unexpected request: ' + (options.method || 'GET') + ' ' + url)
+  }
+
+  const result = await updateGitHubPost(1, {
+    title: 'Updated title',
+    content: 'Updated content',
+    draft: false,
+    expectedUpdatedAt: '2026-11-03T10:00:00Z'
+  })
+
+  const patch = calls.find(call => call.options.method === 'PATCH')
+  assert.ok(patch)
+  const payload = JSON.parse(patch.options.body)
+  assert.equal(payload.title, 'Updated title')
+  assert.match(payload.body, /Updated content/)
+  assert.equal(result.post.updatedAt, '2026-11-03T12:00:00.000Z')
 })

@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Head from 'next/head'
+import { AlertTriangle, CheckCircle2, Eye, FilePlus2, LogOut, Save, ShieldCheck, XCircle } from 'lucide-react'
 import Container from '@/components/Container'
+import AdminDraftPreview from '@/components/AdminDraftPreview'
 import AdminMarkdownEditor from '@/components/AdminMarkdownEditor'
+import { appendDraftSnapshot, normalizeDraftSnapshots } from '@/lib/admin-draft-history.mjs'
+import { runContentPreflight } from '@/lib/content-preflight.mjs'
 
 const DRAFT_STORAGE_PREFIX = 'nobelium:admin-draft:'
 const AUTOSAVE_DELAY_MS = 1500
@@ -26,6 +30,14 @@ export default function AdminPage () {
   const [draftSaveState, setDraftSaveState] = useState('idle')
   const [lastAutosavedAt, setLastAutosavedAt] = useState(null)
   const [recovery, setRecovery] = useState(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [conflict, setConflict] = useState(false)
+  const savePostRef = useRef(null)
+  const preflight = useMemo(() => runContentPreflight(form, {
+    mode: 'publish',
+    currentNumber,
+    posts
+  }), [form, currentNumber, posts])
 
   const loadPosts = useCallback(async () => {
     setLoadingPosts(true)
@@ -65,7 +77,7 @@ export default function AdminPage () {
   }, [loadPosts])
 
   useEffect(() => {
-    if (!dirty) return
+    if (!dirty || !session?.authenticated) return
     if (!hasDraftContent(form)) {
       removeLocalDraft(currentNumber)
       setDraftSaveState('idle')
@@ -77,8 +89,8 @@ export default function AdminPage () {
     setDraftSaveState('pending')
     const timer = window.setTimeout(() => {
       try {
-        writeLocalDraft(currentNumber, form)
-        setLastAutosavedAt(Date.now())
+        const updatedAt = appendLocalDraftSnapshot(currentNumber, form)
+        setLastAutosavedAt(updatedAt)
         setDraftSaveState('saved')
       } catch (storageError) {
         console.error(storageError)
@@ -87,7 +99,7 @@ export default function AdminPage () {
     }, AUTOSAVE_DELAY_MS)
 
     return () => window.clearTimeout(timer)
-  }, [form, dirty, recovery, saving, currentNumber])
+  }, [form, dirty, recovery, saving, currentNumber, session?.authenticated])
 
   useEffect(() => {
     if (!dirty) return
@@ -99,15 +111,49 @@ export default function AdminPage () {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [dirty])
 
+  useEffect(() => {
+    const handleShortcut = event => {
+      if (!session?.authenticated || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 's') return
+      event.preventDefault()
+      savePostRef.current?.(true)
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [session?.authenticated])
+
   function updateField (field, value) {
     setForm(current => ({ ...current, [field]: value }))
     setDirty(true)
     setDraftSaveState('pending')
+    setConflict(false)
     setMessage('')
     setError('')
   }
 
+  function persistCurrentDraft () {
+    if (!hasDraftContent(form)) return true
+    try {
+      const updatedAt = appendLocalDraftSnapshot(currentNumber, form)
+      setLastAutosavedAt(updatedAt)
+      setDraftSaveState('saved')
+      return true
+    } catch (storageError) {
+      console.error(storageError)
+      setDraftSaveState('error')
+      return false
+    }
+  }
+
+  function canLeaveCurrentPost () {
+    if (!dirty) return true
+    const confirmed = window.confirm('当前文章还有未保存修改。切换前会先在本机保留一个版本，是否继续？')
+    if (!confirmed) return false
+    if (persistCurrentDraft()) return true
+    return window.confirm('本地版本保存失败。仍要离开并放弃当前页面中的修改吗？')
+  }
+
   function startNewPost () {
+    if (!canLeaveCurrentPost()) return
     const nextForm = createEmptyForm()
     setCurrentNumber(null)
     setCurrentPost(null)
@@ -117,10 +163,13 @@ export default function AdminPage () {
     setDirty(false)
     setDraftSaveState('idle')
     setLastAutosavedAt(null)
+    setConflict(false)
+    setPreviewOpen(false)
     setRecovery(findRecovery(null, nextForm))
   }
 
   async function openPost (number) {
+    if (!canLeaveCurrentPost()) return
     setError('')
     setMessage('')
     setSaving(true)
@@ -142,6 +191,8 @@ export default function AdminPage () {
       setDirty(false)
       setDraftSaveState('idle')
       setLastAutosavedAt(null)
+      setConflict(false)
+      setPreviewOpen(false)
       setRecovery(findRecovery(post.githubIssueNumber, nextForm))
     } catch (requestError) {
       setError(requestError.message)
@@ -178,6 +229,7 @@ export default function AdminPage () {
   }
 
   async function logout () {
+    if (!canLeaveCurrentPost()) return
     try {
       await requestJson('/api/admin/logout', { method: 'POST', body: '{}' })
     } catch (requestError) {
@@ -192,6 +244,8 @@ export default function AdminPage () {
     setDraftSaveState('idle')
     setLastAutosavedAt(null)
     setRecovery(null)
+    setPreviewOpen(false)
+    setConflict(false)
   }
 
   async function savePost (draft) {
@@ -204,13 +258,14 @@ export default function AdminPage () {
       setSaving(false)
       return
     }
-    if (!form.title.trim()) {
-      setError('请输入文章标题。')
-      setSaving(false)
-      return
-    }
-    if (!draft && !form.content.trim()) {
-      setError('发布文章前需要填写正文。')
+
+    const checks = runContentPreflight(form, {
+      mode: draft ? 'draft' : 'publish',
+      currentNumber,
+      posts
+    })
+    if (!checks.ready) {
+      setError(checks.errors[0]?.message || '发布检查未通过。')
       setSaving(false)
       return
     }
@@ -218,7 +273,8 @@ export default function AdminPage () {
     const payload = {
       ...form,
       tags: form.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      draft
+      draft,
+      ...(currentNumber && currentPost?.updatedAt ? { expectedUpdatedAt: currentPost.updatedAt } : {})
     }
     const previousNumber = currentNumber
     const url = currentNumber ? '/api/admin/posts/' + currentNumber : '/api/admin/posts'
@@ -247,11 +303,16 @@ export default function AdminPage () {
       setDraftSaveState('idle')
       setLastAutosavedAt(null)
       setRecovery(null)
-      setMessage(draft ? '草稿已保存到 GitHub Issue。' : '文章已发布，页面缓存已触发更新。')
+      setConflict(false)
+      setMessage(draft ? '草稿已保存到 GitHub Issue；可按 Ctrl / Cmd + S 再次保存。' : '文章已发布，页面缓存已触发更新。')
       await loadPosts()
     } catch (requestError) {
       if (requestError.status === 401) {
         setSession(current => current ? { ...current, authenticated: false } : current)
+      }
+      if (requestError.status === 409) {
+        persistCurrentDraft()
+        setConflict(true)
       }
       setError(requestError.message)
     } finally {
@@ -259,22 +320,29 @@ export default function AdminPage () {
     }
   }
 
+  savePostRef.current = savePost
+
   function restoreRecovery () {
     if (!recovery) return
-    const nextForm = normalizeDraftForm(recovery.form)
+    const selected = recovery.snapshots.find(snapshot => snapshot.updatedAt === recovery.selectedUpdatedAt) || recovery.snapshots[0]
+    const nextForm = normalizeDraftForm(selected?.form)
     if (!nextForm) {
       setError('本地草稿内容无效，无法恢复。')
       return
     }
     setForm(nextForm)
     setCurrentNumber(recovery.number)
-    if (recovery.number === null) setCurrentPost(null)
+    if (recovery.number === null) {
+      setCurrentPost(null)
+    } else {
+      setCurrentPost(current => current || posts.find(post => post.githubIssueNumber === recovery.number) || null)
+    }
     setDirty(true)
     setDraftSaveState('saved')
-    setLastAutosavedAt(recovery.updatedAt)
+    setLastAutosavedAt(selected.updatedAt)
     setRecovery(null)
     setError('')
-    setMessage('已恢复本地草稿。确认内容后，请手动保存为草稿或发布。')
+    setMessage('已恢复所选本地版本。确认内容后，请保存为草稿或发布。')
   }
 
   function discardRecovery () {
@@ -284,8 +352,10 @@ export default function AdminPage () {
     setDirty(false)
     setDraftSaveState('idle')
     setLastAutosavedAt(null)
-    setMessage('已丢弃本地草稿备份。')
+    setMessage('已丢弃本地草稿版本。')
   }
+
+  const selectedRecovery = recovery?.snapshots.find(snapshot => snapshot.updatedAt === recovery.selectedUpdatedAt) || recovery?.snapshots[0]
 
   return (
     <>
@@ -293,22 +363,23 @@ export default function AdminPage () {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <Container title="写作后台 · 管理员" description="Nobelium 管理员写作后台" headerMeta="管理员" robots="noindex, nofollow">
-        <section className="w-full pb-16">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[var(--ink-line)] pb-5">
+        <section className="admin-studio w-full pb-16">
+          <header className="admin-studio-header">
             <div>
-              <p className="ink-eyebrow mb-2">Admin</p>
-              <h1 className="text-3xl font-semibold text-[var(--ink-main)]">写作后台</h1>
-              <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">
-                文章保存在 GitHub Issue；Notion 原有内容继续正常显示。
-              </p>
+              <p className="ink-eyebrow mb-2">Editorial desk</p>
+              <h1>写作后台</h1>
+              <p>GitHub Issue 负责可版本化写作，Notion 继续负责原有内容与发布生态。</p>
             </div>
             {session?.authenticated && (
-              <div className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="text-[var(--ink-muted)]">{session.username}</span>
-                <button type="button" className="ink-command" onClick={logout}>退出登录</button>
+              <div className="admin-user-badge">
+                <span>{session.username}</span>
+                <button type="button" className="ink-command" onClick={logout}>
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
+                  退出
+                </button>
               </div>
             )}
-          </div>
+          </header>
 
           {checkingSession && <StatusCard>正在检查管理员会话……</StatusCard>}
 
@@ -320,21 +391,18 @@ export default function AdminPage () {
           )}
 
           {!checkingSession && session?.configured && !session.authenticated && (
-            <div className="mx-auto max-w-md rounded-sm border border-[var(--ink-line)] bg-[var(--ink-surface)] p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-[var(--ink-main)]">管理员登录</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--ink-muted)]">只有管理员账号可以创建和修改文章。</p>
-              <form className="mt-6 grid gap-4" onSubmit={login}>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
+            <div className="admin-login-card">
+              <div className="admin-login-intro">
+                <p className="ink-eyebrow">Private edition</p>
+                <h2>管理员登录</h2>
+                <p>只有管理员账号可以创建、修改和发布文章。</p>
+              </div>
+              <form className="admin-login-form" onSubmit={login}>
+                <label>
                   <span>管理员账号</span>
-                  <input
-                    value={username}
-                    onChange={event => setUsername(event.target.value)}
-                    autoComplete="username"
-                    required
-                    className="h-11 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 text-base outline-none focus:border-[var(--ink-accent)]"
-                  />
+                  <input value={username} onChange={event => setUsername(event.target.value)} autoComplete="username" required />
                 </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
+                <label>
                   <span>密码</span>
                   <div className="relative">
                     <input
@@ -343,152 +411,237 @@ export default function AdminPage () {
                       onChange={event => setPassword(event.target.value)}
                       autoComplete="current-password"
                       required
-                      className="h-11 w-full rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 pr-16 text-base outline-none focus:border-[var(--ink-accent)]"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(current => !current)}
-                      aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                      className="absolute inset-y-0 right-0 px-3 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink-main)]"
-                    >
+                    <button type="button" onClick={() => setShowPassword(current => !current)} aria-label={showPassword ? '隐藏密码' : '显示密码'}>
                       {showPassword ? '隐藏' : '显示'}
                     </button>
                   </div>
                 </label>
                 {error && <InlineError>{error}</InlineError>}
                 <button type="submit" disabled={loggingIn} className="ink-command ink-command-primary disabled:opacity-60">
-                  {loggingIn ? '正在登录……' : '登录'}
+                  {loggingIn ? '正在登录……' : '进入写作台'}
                 </button>
               </form>
             </div>
           )}
 
           {session?.authenticated && (
-            <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-              <aside className="rounded-sm border border-[var(--ink-line)] bg-[var(--ink-surface)] p-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
-                <button type="button" className="ink-command ink-command-primary w-full" onClick={startNewPost}>新建文章</button>
-                <div className="mt-5 flex items-center justify-between text-xs uppercase tracking-wide text-[var(--ink-muted)]">
-                  <span>GitHub 文章</span>
-                  {loadingPosts && <span>加载中</span>}
-                </div>
-                <div className="mt-3 grid gap-1">
-                  {!loadingPosts && posts.length === 0 && (
-                    <p className="py-4 text-sm leading-6 text-[var(--ink-muted)]">还没有 GitHub 文章。新建后会创建一个带 nobelium-post 标签的 Issue。</p>
-                  )}
-                  {posts.map(post => (
-                    <button
-                      key={post.githubIssueNumber}
-                      type="button"
-                      onClick={() => openPost(post.githubIssueNumber)}
-                      className={`rounded-sm px-3 py-3 text-left transition hover:bg-[var(--ink-accent-soft)] ${currentNumber === post.githubIssueNumber ? 'bg-[var(--ink-accent-soft)]' : ''}`}
-                    >
-                      <span className="block text-sm font-semibold leading-5 text-[var(--ink-main)]">{post.title}</span>
-                      <span className="mt-1 block text-xs text-[var(--ink-muted)]">{post.draft ? '草稿' : '已发布'} · #{post.githubIssueNumber}</span>
-                    </button>
-                  ))}
-                </div>
-              </aside>
+            <div className="admin-workflow">
+              <div className="admin-workflow-bar" aria-label="写作流程">
+                <span className="is-complete"><b>01</b> 文章档案</span>
+                <span className={dirty ? 'is-current' : 'is-complete'}><b>02</b> 写作台</span>
+                <span className={preflight.ready ? 'is-complete' : 'is-attention'}><b>03</b> 发布检查</span>
+              </div>
 
-              <div className="min-w-0 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-surface)] p-5 sm:p-7">
-                {!session.writeConfigured && (
-                  <InlineError>写文章还需要在 Vercel 配置 CONTENT_GITHUB_REPO 和具有 Issues 读写权限的 CONTENT_GITHUB_TOKEN。</InlineError>
-                )}
-
-                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="ink-eyebrow mb-1">{currentNumber ? '# ' + currentNumber : 'New post'}</p>
-                    <h2 className="text-2xl font-semibold text-[var(--ink-main)]">{currentNumber ? '编辑文章' : '新建文章'}</h2>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {currentPost?.githubIssueUrl && (
-                      <a href={currentPost.githubIssueUrl} target="_blank" rel="noreferrer" className="ink-command">GitHub Issue</a>
-                    )}
-                    {currentNumber && currentPost?.draft && (
-                      <a href={'/preview/' + currentNumber} target="_blank" rel="noreferrer" className="ink-command">预览已保存草稿</a>
-                    )}
-                    {currentPost && !currentPost.draft && currentPost.slug && (
-                      <a href={'/' + currentPost.slug} target="_blank" rel="noreferrer" className="ink-command">查看文章</a>
-                    )}
-                  </div>
-                </div>
-
-                {recovery && (
-                  <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sm border border-[var(--ink-seal)] bg-[var(--ink-seal-soft)] px-4 py-3 text-sm text-[var(--ink-seal)]">
+              <div className="admin-studio-grid">
+                <aside className="admin-archive">
+                  <div className="admin-archive-heading">
                     <div>
-                      <strong className="block">发现上次未提交的本地草稿</strong>
-                      <span className="mt-1 block text-xs leading-5">保存于 {formatSavedAt(recovery.updatedAt)}。恢复后可继续编辑，再手动保存到 GitHub。</span>
+                      <p className="ink-eyebrow">Archive</p>
+                      <h2>文章档案</h2>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" className="ink-command" onClick={restoreRecovery}>恢复草稿</button>
-                      <button type="button" className="ink-command" onClick={discardRecovery}>丢弃备份</button>
+                    <span>{posts.length}</span>
+                  </div>
+                  <button type="button" className="ink-command ink-command-primary admin-new-post" onClick={startNewPost}>
+                    <FilePlus2 className="h-4 w-4" aria-hidden="true" />
+                    新建文章
+                  </button>
+                  <div className="admin-archive-label">
+                    <span>GitHub Issues</span>
+                    {loadingPosts && <span>读取中</span>}
+                  </div>
+                  <div className="admin-archive-list">
+                    {!loadingPosts && posts.length === 0 && (
+                      <p className="admin-archive-empty">还没有 GitHub 文章。新建后会创建一个带 nobelium-post 标签的 Issue。</p>
+                    )}
+                    {posts.map(post => (
+                      <button
+                        key={post.githubIssueNumber}
+                        type="button"
+                        onClick={() => openPost(post.githubIssueNumber)}
+                        className={'admin-archive-item' + (currentNumber === post.githubIssueNumber ? ' is-active' : '')}
+                      >
+                        <span className={'admin-archive-status ' + (post.draft ? 'is-draft' : 'is-live')}>{post.draft ? '草稿' : '已发布'}</span>
+                        <strong>{post.title}</strong>
+                        <small>#{post.githubIssueNumber} · {formatArchiveDate(post.date)}</small>
+                      </button>
+                    ))}
+                  </div>
+                </aside>
+
+                <main className="admin-writing-desk">
+                  <header className="admin-desk-header">
+                    <div>
+                      <p className="ink-eyebrow">{currentNumber ? 'Issue #' + currentNumber : 'New entry'}</p>
+                      <h2>{currentNumber ? '编辑文章' : '新建文章'}</h2>
+                      <p>{currentPost?.updatedAt ? '线上版本已同步' : '内容将保存到 GitHub Issue'}</p>
                     </div>
-                  </div>
-                )}
+                    <div className="admin-desk-actions">
+                      <button type="button" className="ink-command" onClick={() => setPreviewOpen(true)}>
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                        预览当前内容
+                      </button>
+                      {currentPost?.githubIssueUrl && (
+                        <a href={currentPost.githubIssueUrl} target="_blank" rel="noreferrer" className="ink-command">GitHub Issue</a>
+                      )}
+                      {currentNumber && currentPost?.draft && (
+                        <a href={'/preview/' + currentNumber} target="_blank" rel="noreferrer" className="ink-command">已保存草稿</a>
+                      )}
+                      {currentPost && !currentPost.draft && currentPost.slug && (
+                        <a href={'/' + currentPost.slug} target="_blank" rel="noreferrer" className="ink-command">查看文章</a>
+                      )}
+                    </div>
+                  </header>
 
-                <div className="grid gap-5">
-                  <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
-                    <span>标题</span>
-                    <input value={form.title} onChange={event => updateField('title', event.target.value)} maxLength={180} required className="h-12 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 text-base outline-none focus:border-[var(--ink-accent)]" />
-                  </label>
-
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
-                      <span>日期</span>
-                      <input type="date" value={form.date} onChange={event => updateField('date', event.target.value)} className="h-11 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 text-base outline-none focus:border-[var(--ink-accent)]" />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
-                      <span>Slug（可留空自动生成）</span>
-                      <input value={form.slug} onChange={event => updateField('slug', event.target.value)} placeholder="my-post" className="h-11 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 text-base outline-none focus:border-[var(--ink-accent)]" />
-                    </label>
-                  </div>
-
-                  <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
-                    <span>摘要（可留空自动提取）</span>
-                    <textarea value={form.summary} onChange={event => updateField('summary', event.target.value)} maxLength={300} rows={3} className="resize-y rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 py-2 text-base leading-7 outline-none focus:border-[var(--ink-accent)]" />
-                  </label>
-
-                  <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
-                    <span>标签（英文逗号分隔）</span>
-                    <input value={form.tags} onChange={event => updateField('tags', event.target.value)} placeholder="Next.js, Vercel" className="h-11 rounded-sm border border-[var(--ink-line)] bg-[var(--ink-paper)] px-3 text-base outline-none focus:border-[var(--ink-accent)]" />
-                  </label>
-
-                  <div className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
-                    <span>正文（Markdown）</span>
-                    <AdminMarkdownEditor value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />
-                  </div>
-
-                  {draftSaveState !== 'idle' && dirty && (
-                    <DraftSaveStatus state={draftSaveState} savedAt={lastAutosavedAt} />
+                  {!session.writeConfigured && (
+                    <InlineError>写文章还需要在 Vercel 配置 CONTENT_GITHUB_REPO 和具有 Issues 读写权限的 CONTENT_GITHUB_TOKEN。</InlineError>
                   )}
 
-                  {error && <InlineError>{error}</InlineError>}
-                  {message && <p className="rounded-sm border border-[var(--ink-accent)] bg-[var(--ink-accent-soft)] px-3 py-2 text-sm text-[var(--ink-accent)]" role="status">{message}</p>}
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--ink-line)] pt-5">
-                    <p className="text-xs leading-5 text-[var(--ink-muted)]">支持 GFM、代码块、表格、图片和 KaTeX 数学公式。编辑内容会先自动保存在本机浏览器。</p>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(true)} className="ink-command disabled:opacity-60">{saving ? '保存中……' : '保存为草稿'}</button>
-                      <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(false)} className="ink-command ink-command-primary disabled:opacity-60">{saving ? '保存中……' : currentPost?.draft ? '发布文章' : '更新并发布'}</button>
+                  {recovery && (
+                    <div className="admin-recovery-card">
+                      <div>
+                        <strong>发现 {recovery.snapshots.length} 个本机草稿版本</strong>
+                        <p>最近保存于 {formatSavedAt(selectedRecovery?.updatedAt)}。恢复一个版本不会覆盖其他版本。</p>
+                      </div>
+                      <div className="admin-recovery-actions">
+                        <select
+                          value={recovery.selectedUpdatedAt}
+                          onChange={event => setRecovery(current => ({ ...current, selectedUpdatedAt: Number(event.target.value) }))}
+                          aria-label="选择要恢复的本地草稿版本"
+                        >
+                          {recovery.snapshots.map((snapshot, index) => (
+                            <option key={snapshot.updatedAt} value={snapshot.updatedAt}>
+                              {index === 0 ? '最新 · ' : ''}{formatSavedAt(snapshot.updatedAt)} · {snapshot.form.title || '未命名'}
+                            </option>
+                          ))}
+                        </select>
+                        <button type="button" className="ink-command" onClick={restoreRecovery}>恢复所选版本</button>
+                        <button type="button" className="ink-command" onClick={discardRecovery}>全部丢弃</button>
+                      </div>
                     </div>
+                  )}
+
+                  {conflict && (
+                    <div className="admin-conflict-card" role="alert">
+                      <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+                      <div>
+                        <strong>检测到线上版本冲突</strong>
+                        <p>你的当前输入仍保留在本机。请先重新打开这篇文章查看线上版本，再合并需要的修改。</p>
+                      </div>
+                      {currentNumber && <button type="button" className="ink-command" onClick={() => openPost(currentNumber)}>重新载入线上版本</button>}
+                    </div>
+                  )}
+
+                  <div className="admin-desk-grid">
+                    <div className="admin-desk-main">
+                      <div className="admin-form-grid">
+                        <label className="admin-field admin-field-title">
+                          <span>标题</span>
+                          <input value={form.title} onChange={event => updateField('title', event.target.value)} maxLength={180} required placeholder="给这次思考一个准确的名字" />
+                        </label>
+
+                        <div className="admin-field-row">
+                          <label className="admin-field">
+                            <span>日期</span>
+                            <input type="date" value={form.date} onChange={event => updateField('date', event.target.value)} />
+                          </label>
+                          <label className="admin-field">
+                            <span>Slug（可留空自动生成）</span>
+                            <input value={form.slug} onChange={event => updateField('slug', event.target.value)} placeholder="my-post" />
+                          </label>
+                        </div>
+
+                        <label className="admin-field">
+                          <span>摘要（可留空自动提取）</span>
+                          <textarea value={form.summary} onChange={event => updateField('summary', event.target.value)} maxLength={300} rows={3} placeholder="用一两句话说明文章解决什么问题" />
+                        </label>
+
+                        <label className="admin-field">
+                          <span>标签（英文逗号分隔）</span>
+                          <input value={form.tags} onChange={event => updateField('tags', event.target.value)} placeholder="Next.js, Vercel" />
+                        </label>
+
+                        <div className="admin-field admin-editor-field">
+                          <span>正文（Markdown）</span>
+                          <AdminMarkdownEditor value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />
+                        </div>
+                      </div>
+
+                      {draftSaveState !== 'idle' && dirty && (
+                        <DraftSaveStatus state={draftSaveState} savedAt={lastAutosavedAt} />
+                      )}
+
+                      {error && <InlineError>{error}</InlineError>}
+                      {message && <p className="admin-success-message" role="status">{message}</p>}
+
+                      <footer className="admin-save-bar">
+                        <p>Ctrl / Cmd + S 保存草稿。正文会先形成本机版本，再同步到 GitHub。</p>
+                        <div>
+                          <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(true)} className="ink-command disabled:opacity-60">
+                            <Save className="h-4 w-4" aria-hidden="true" />
+                            {saving ? '保存中……' : '保存为草稿'}
+                          </button>
+                          <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(false)} className="ink-command ink-command-primary disabled:opacity-60">
+                            {saving ? '保存中……' : currentPost?.draft ? '发布文章' : '更新并发布'}
+                          </button>
+                        </div>
+                      </footer>
+                    </div>
+
+                    <aside className="admin-checks" aria-label="发布前检查">
+                      <div className="admin-check-heading">
+                        <div>
+                          <p className="ink-eyebrow">Preflight</p>
+                          <h3>发布检查</h3>
+                        </div>
+                        <span className={preflight.ready ? 'is-ready' : 'is-blocked'}>
+                          {preflight.ready ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <XCircle className="h-4 w-4" aria-hidden="true" />}
+                          {preflight.ready ? '可发布' : preflight.errors.length + ' 项阻塞'}
+                        </span>
+                      </div>
+                      <div className="admin-check-summary">
+                        <span>{preflight.errors.length} 错误</span>
+                        <span>{preflight.warnings.length} 提醒</span>
+                        <span>{preflight.imageCount} 图片</span>
+                        <span>{preflight.tagCount} 标签</span>
+                      </div>
+                      <div className="admin-check-list">
+                        {preflight.issues.length === 0 && (
+                          <p className="admin-check-clean"><ShieldCheck className="h-5 w-5" aria-hidden="true" />标题、正文、链接与图片检查均通过。</p>
+                        )}
+                        {preflight.issues.map(issue => (
+                          <p key={issue.code} className={issue.level === 'error' ? 'is-error' : 'is-warning'}>
+                            {issue.level === 'error' ? <XCircle className="h-4 w-4" aria-hidden="true" /> : <AlertTriangle className="h-4 w-4" aria-hidden="true" />}
+                            <span>{issue.message}{issue.detail ? <small>{issue.detail}</small> : null}</span>
+                          </p>
+                        ))}
+                      </div>
+                      <div className="admin-check-note">
+                        <strong>本地版本</strong>
+                        <p>最多保留最近 5 个版本。GitHub 保存成功后才会清理对应本机版本。</p>
+                      </div>
+                    </aside>
                   </div>
-                </div>
+                </main>
               </div>
             </div>
           )}
         </section>
       </Container>
+
+      {previewOpen && <AdminDraftPreview form={form} onClose={() => setPreviewOpen(false)} />}
     </>
   )
 }
 
 function DraftSaveStatus ({ state, savedAt }) {
   if (state === 'error') {
-    return <p className="rounded-sm border border-[var(--ink-seal)] bg-[var(--ink-seal-soft)] px-3 py-2 text-sm text-[var(--ink-seal)]" role="alert">本地自动保存失败，请及时手动保存到 GitHub。</p>
+    return <p className="admin-draft-status is-error" role="alert">本地自动保存失败，请及时手动保存到 GitHub。</p>
   }
   const text = state === 'saved'
-    ? '已自动保存到本机 · ' + formatSavedAt(savedAt)
-    : '停止输入后会自动保存到本机……'
-  return <p className="text-xs leading-5 text-[var(--ink-muted)]" role="status">{text}</p>
+    ? '已保存本机版本 · ' + formatSavedAt(savedAt)
+    : '停止输入后会自动保存本机版本……'
+  return <p className="admin-draft-status" role="status">{text}</p>
 }
 
 function StatusCard ({ children, tone = 'default' }) {
@@ -499,7 +652,7 @@ function StatusCard ({ children, tone = 'default' }) {
 }
 
 function InlineError ({ children }) {
-  return <p className="rounded-sm border border-[var(--ink-seal)] bg-[var(--ink-seal-soft)] px-3 py-2 text-sm leading-6 text-[var(--ink-seal)]" role="alert">{children}</p>
+  return <p className="admin-inline-error" role="alert">{children}</p>
 }
 
 function createEmptyForm () {
@@ -515,44 +668,50 @@ function createEmptyForm () {
 }
 
 function findRecovery (number, baselineForm) {
-  const draft = readLocalDraft(number)
-  if (!draft || !hasDraftContent(draft.form)) return null
-  if (sameForm(draft.form, baselineForm)) {
-    removeLocalDraft(number)
+  const history = readLocalDraftHistory(number)
+  const snapshots = history.filter(snapshot => !sameForm(snapshot.form, baselineForm))
+  if (!snapshots.length) {
+    if (history.length) removeLocalDraft(number)
     return null
   }
   return {
     number,
-    form: draft.form,
-    updatedAt: draft.updatedAt
+    snapshots,
+    selectedUpdatedAt: snapshots[0].updatedAt
   }
 }
 
-function readLocalDraft (number) {
-  if (typeof window === 'undefined') return null
+function readLocalDraftHistory (number) {
+  if (typeof window === 'undefined') return []
   try {
     const raw = window.localStorage.getItem(getDraftStorageKey(number))
-    if (!raw) return null
+    if (!raw) return []
     const data = JSON.parse(raw)
-    const form = normalizeDraftForm(data?.form)
-    const updatedAt = Number(data?.updatedAt)
-    if (!form || !Number.isFinite(updatedAt)) {
-      removeLocalDraft(number)
-      return null
-    }
-    return { form, updatedAt }
+    const source = Array.isArray(data?.snapshots)
+      ? data.snapshots
+      : data?.form
+        ? [{ form: data.form, updatedAt: data.updatedAt }]
+        : []
+    return normalizeDraftSnapshots(source)
+      .map(snapshot => ({ ...snapshot, form: normalizeDraftForm(snapshot.form) }))
+      .filter(snapshot => snapshot.form && hasDraftContent(snapshot.form))
   } catch (error) {
     console.warn('Unable to read local draft:', error)
-    return null
+    return []
   }
 }
 
-function writeLocalDraft (number, form) {
-  if (typeof window === 'undefined') return
+function appendLocalDraftSnapshot (number, form) {
+  if (typeof window === 'undefined') return Date.now()
+  const normalized = normalizeDraftForm(form)
+  if (!normalized) throw new Error('Invalid draft form')
+  const history = readLocalDraftHistory(number)
+  const snapshots = appendDraftSnapshot(history, normalized, Date.now(), sameForm)
   window.localStorage.setItem(getDraftStorageKey(number), JSON.stringify({
-    form: normalizeDraftForm(form),
-    updatedAt: Date.now()
+    version: 2,
+    snapshots
   }))
+  return snapshots[0].updatedAt
 }
 
 function removeLocalDraft (number) {
@@ -601,6 +760,12 @@ function sameForm (left, right) {
 function formatDateInput (value) {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? new Date().toISOString().slice(0, 10) : date.toISOString().slice(0, 10)
+}
+
+function formatArchiveDate (value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '日期待定'
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
 function formatSavedAt (value) {

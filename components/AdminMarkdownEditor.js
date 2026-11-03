@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import AdminImageLibrary from '@/components/AdminImageLibrary'
 import { extractMarkdownHeadings } from '@/lib/markdown-outline.mjs'
 
 const BLOCK_ACTIONS = [
@@ -185,6 +186,20 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
     fileInputRef.current?.click()
   }
 
+  function openImageLibrary () {
+    librarySelectionRef.current = getSelection()
+    setImageOpen(false)
+    setLibraryOpen(true)
+  }
+
+  function insertLibraryImage (image) {
+    const alt = getImageAlt(image.pathname)
+    const inserted = insertBlock(buildImageMarkdown(image.url, alt), alt, librarySelectionRef.current || getSelection())
+    if (!inserted) return
+    librarySelectionRef.current = null
+    setLibraryOpen(false)
+  }
+
   function handleImageFileInput (event) {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -304,6 +319,7 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
         <div className="admin-editor-toolbar-group">
           <button type="button" className="admin-editor-tool" disabled={uploading} onClick={openImagePicker}>{uploading ? '上传中...' : '上传图片'}</button>
           <button type="button" className="admin-editor-tool" onClick={() => setImageOpen(current => !current)}>图片摆放</button>
+          <button type="button" className="admin-editor-tool" onClick={openImageLibrary}>图片库</button>
           <button type="button" className="admin-editor-tool" onClick={() => insertBlock('> [!fold] 折叠标题\n>\n> 这里写折叠内容。', '折叠标题')}>折叠块</button>
           <div className="admin-editor-modes" role="group" aria-label="编辑模式">
             {MODES.map(item => (
@@ -325,6 +341,17 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
         <div className={'admin-upload-status' + (uploadError ? ' admin-upload-status-error' : '')} role={uploadError ? 'alert' : 'status'}>
           {uploadError || '正在压缩并上传图片...'}
         </div>
+      )}
+
+      {libraryOpen && (
+        <AdminImageLibrary
+          content={content}
+          onInsert={insertLibraryImage}
+          onClose={() => {
+            librarySelectionRef.current = null
+            setLibraryOpen(false)
+          }}
+        />
       )}
 
       {imageOpen && (

@@ -1,6 +1,7 @@
 import FormattedDate from '@/components/FormattedDate'
 import { useConfig } from '@/lib/config'
 import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
 
 const BlogPost = ({ post }) => {
   const BLOG = useConfig()
@@ -10,39 +11,28 @@ const BlogPost = ({ post }) => {
   return (
     <Link
       href={`${BLOG.path}/${post.slug}`}
-      className="group -mx-3 block border-b border-[var(--ink-line)] px-3 py-6 transition-colors hover:bg-[var(--ink-surface)] ink-focus md:py-7"
+      className="post-index-row ink-focus"
+      aria-label={`阅读《${post.title}》`}
     >
-      <article key={post.id} className="transition duration-200 md:grid md:grid-cols-[148px_minmax(0,1fr)] md:gap-8 xl:grid-cols-[140px_minmax(0,1fr)_minmax(22rem,0.85fr)]">
-        <div className="mb-3 text-[0.78rem] uppercase tracking-normal text-[var(--ink-muted)] md:mb-0 md:pt-1">
-          <time className="block">
-            <FormattedDate date={post.date} />
-          </time>
-        </div>
-        <div className="min-w-0">
-          <header>
-            <h2 className="text-xl font-semibold leading-snug tracking-normal text-[var(--ink-main)] transition-colors group-hover:text-[var(--ink-accent)] md:text-[1.45rem]">
-              {post.title}
-            </h2>
-          </header>
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {post.tags.slice(0, 3).map(tag => (
-                <span
-                  key={tag}
-                  className="rounded-sm bg-transparent px-2.5 py-1 text-xs font-medium uppercase tracking-normal text-[var(--ink-muted)] ring-1 ring-[var(--ink-line)]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-        {shouldShowSummary && (
-          <p className="mt-3 line-clamp-2 max-w-2xl leading-8 text-[var(--ink-muted)] md:col-start-2 md:mt-0 md:pt-1 xl:col-start-3 xl:row-start-1 xl:max-w-none">
-            {summary}
-          </p>
+      <div className="post-index-date">
+        <span>Published</span>
+        <time><FormattedDate date={post.date} /></time>
+      </div>
+
+      <article className="post-index-entry">
+        <h2>{post.title}</h2>
+        {shouldShowSummary && <p className="post-index-summary">{summary}</p>}
+        {post.tags && post.tags.length > 0 && (
+          <div className="post-index-tags" aria-label="文章标签">
+            {post.tags.slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}
+          </div>
         )}
       </article>
+
+      <span className="post-index-more" aria-hidden="true">
+        <span>阅读札记</span>
+        <ArrowUpRight className="h-4 w-4" />
+      </span>
     </Link>
   )
 }
