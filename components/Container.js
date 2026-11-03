@@ -7,7 +7,14 @@ import cn from 'classnames'
 import ReadingProgress from '@/components/ReadingProgress'
 // import BlogPost from './BlogPost'
 
-const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) => {
+const Container = ({
+  children,
+  layout,
+  fullWidth,
+  headerMeta,
+  robots = 'follow, index',
+  ...customMeta
+}) => {
   const BLOG = useConfig()
 
   const url = BLOG.path.length ? `${BLOG.link}/${BLOG.path}` : BLOG.link
@@ -26,7 +33,7 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
       <Head>
         <title>{meta.title}</title>
         {/* <meta content={BLOG.darkBackground} name="theme-color" /> */}
-        <meta name="robots" content="follow, index" />
+        <meta name="robots" content={robots} />
         <meta charSet="UTF-8" />
         {BLOG.seo.googleSiteVerification && (
           <meta
@@ -92,7 +99,8 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
 
 Container.propTypes = {
   children: PropTypes.node,
-  headerMeta: PropTypes.string
+  headerMeta: PropTypes.string,
+  robots: PropTypes.string
 }
 
 export default Container

@@ -92,6 +92,7 @@ GitHub Issue article and admin variables:
 | `ADMIN_PASSWORD` | Legacy plaintext fallback; leave empty when using the hash |
 | `ADMIN_SESSION_SECRET` | Random secret of at least 32 characters used to sign admin sessions |
 | `ADMIN_SESSION_TTL_SECONDS` | Session lifetime, default 12 hours and capped at 7 days |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token used by `/admin` for local image uploads |
 
 No second GitHub repository is required. `CONTENT_GITHUB_REPO` and `COMMENTS_GITHUB_REPO` can both be `wuxiahei/nobelium-main`, and the two token variables can contain the same fine-grained token. Article Issues use `nobelium-post`/`nobelium-draft` labels; ordinary comment Issues do not use those labels, so the two features stay separate.
 
@@ -164,6 +165,7 @@ Notion remains fully supported. GitHub Issues are an optional second content sou
    - `ADMIN_USERNAME=<your admin name>`
    - `ADMIN_PASSWORD_HASH=<generated hash>`
    - `ADMIN_SESSION_SECRET=<at least 32 random characters>`
+   - `BLOB_READ_WRITE_TOKEN=<token created when the Vercel Blob store is connected to the project>`
 4. Open `https://your-site.example/admin` directly. The route is intentionally not linked from the public navigation.
 
 Generate the session secret with:
@@ -212,6 +214,8 @@ GitHub article pages support GitHub Flavored Markdown, tables, fenced code block
 ### Markdown writing helpers
 
 The `/admin` editor keeps the Markdown source visible and adds quick controls for headings, lists, quotes, code, tables, math, dividers, and images. Use **编辑 / 分屏 / 预览** to switch layouts. The toolbar inserts Markdown at the cursor (or at the end when previewing).
+
+When a draft changes, the editor automatically stores a local browser backup after 1.5 seconds. After a reload it offers to restore that backup; saving to GitHub clears it. The heading outline updates while typing and jumps directly to the selected heading. Local images can be selected, pasted, or dragged into the editor; they are compressed in the browser and uploaded to Vercel Blob. Saved GitHub drafts can be opened with **预览已保存草稿** without exposing them publicly.
 
 Insert a collapsible block with the toolbar or write:
 

@@ -3,15 +3,9 @@ import Head from 'next/head'
 import Container from '@/components/Container'
 import AdminMarkdownEditor from '@/components/AdminMarkdownEditor'
 
-const EMPTY_FORM = {
-  title: '',
-  slug: '',
-  summary: '',
-  tags: '',
-  date: new Date().toISOString().slice(0, 10),
-  content: '',
-  draft: true
-}
+const DRAFT_STORAGE_PREFIX = 'nobelium:admin-draft:'
+const AUTOSAVE_DELAY_MS = 1500
+const EMPTY_FORM = createEmptyForm()
 
 export default function AdminPage () {
   const [session, setSession] = useState(null)
@@ -28,6 +22,10 @@ export default function AdminPage () {
   const [password, setPassword] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  const [draftSaveState, setDraftSaveState] = useState('idle')
+  const [lastAutosavedAt, setLastAutosavedAt] = useState(null)
+  const [recovery, setRecovery] = useState(null)
 
   const loadPosts = useCallback(async () => {
     setLoadingPosts(true)
@@ -51,7 +49,11 @@ export default function AdminPage () {
       .then(data => {
         if (!active) return
         setSession(data)
-        if (data.authenticated) loadPosts()
+        if (data.authenticated) {
+          loadPosts()
+          const candidate = findRecovery(null, EMPTY_FORM)
+          if (candidate) setRecovery(candidate)
+        }
       })
       .catch(requestError => {
         if (active) setError(requestError.message)
@@ -62,18 +64,60 @@ export default function AdminPage () {
     return () => { active = false }
   }, [loadPosts])
 
+  useEffect(() => {
+    if (!dirty) return
+    if (!hasDraftContent(form)) {
+      removeLocalDraft(currentNumber)
+      setDraftSaveState('idle')
+      setLastAutosavedAt(null)
+      return
+    }
+    if (recovery || saving) return
+
+    setDraftSaveState('pending')
+    const timer = window.setTimeout(() => {
+      try {
+        writeLocalDraft(currentNumber, form)
+        setLastAutosavedAt(Date.now())
+        setDraftSaveState('saved')
+      } catch (storageError) {
+        console.error(storageError)
+        setDraftSaveState('error')
+      }
+    }, AUTOSAVE_DELAY_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [form, dirty, recovery, saving, currentNumber])
+
+  useEffect(() => {
+    if (!dirty) return
+    const handleBeforeUnload = event => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [dirty])
+
   function updateField (field, value) {
     setForm(current => ({ ...current, [field]: value }))
+    setDirty(true)
+    setDraftSaveState('pending')
     setMessage('')
     setError('')
   }
 
   function startNewPost () {
+    const nextForm = createEmptyForm()
     setCurrentNumber(null)
     setCurrentPost(null)
-    setForm({ ...EMPTY_FORM, date: new Date().toISOString().slice(0, 10) })
+    setForm(nextForm)
     setError('')
     setMessage('')
+    setDirty(false)
+    setDraftSaveState('idle')
+    setLastAutosavedAt(null)
+    setRecovery(findRecovery(null, nextForm))
   }
 
   async function openPost (number) {
@@ -83,9 +127,7 @@ export default function AdminPage () {
     try {
       const data = await requestJson('/api/admin/posts/' + number)
       const post = data.post
-      setCurrentNumber(post.githubIssueNumber)
-      setCurrentPost(post)
-      setForm({
+      const nextForm = {
         title: post.title || '',
         slug: post.slug || '',
         summary: post.summary || '',
@@ -93,7 +135,14 @@ export default function AdminPage () {
         date: formatDateInput(post.date),
         content: data.content || '',
         draft: Boolean(post.draft)
-      })
+      }
+      setCurrentNumber(post.githubIssueNumber)
+      setCurrentPost(post)
+      setForm(nextForm)
+      setDirty(false)
+      setDraftSaveState('idle')
+      setLastAutosavedAt(null)
+      setRecovery(findRecovery(post.githubIssueNumber, nextForm))
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -106,7 +155,7 @@ export default function AdminPage () {
     setLoggingIn(true)
     setError('')
     try {
-      const data = await requestJson('/api/admin/login', {
+      await requestJson('/api/admin/login', {
         method: 'POST',
         body: JSON.stringify({ username, password })
       })
@@ -114,6 +163,13 @@ export default function AdminPage () {
       setSession(nextSession)
       setPassword('')
       await loadPosts()
+      const nextForm = createEmptyForm()
+      setCurrentNumber(null)
+      setCurrentPost(null)
+      setForm(nextForm)
+      setDirty(false)
+      setDraftSaveState('idle')
+      setRecovery(findRecovery(null, nextForm))
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -131,7 +187,11 @@ export default function AdminPage () {
     setPosts([])
     setCurrentNumber(null)
     setCurrentPost(null)
-    setForm(EMPTY_FORM)
+    setForm(createEmptyForm())
+    setDirty(false)
+    setDraftSaveState('idle')
+    setLastAutosavedAt(null)
+    setRecovery(null)
   }
 
   async function savePost (draft) {
@@ -160,6 +220,7 @@ export default function AdminPage () {
       tags: form.tags.split(',').map(tag => tag.trim()).filter(Boolean),
       draft
     }
+    const previousNumber = currentNumber
     const url = currentNumber ? '/api/admin/posts/' + currentNumber : '/api/admin/posts'
 
     try {
@@ -179,6 +240,13 @@ export default function AdminPage () {
         date: formatDateInput(post.date),
         draft: Boolean(post.draft)
       }))
+      removeLocalDraft(null)
+      removeLocalDraft(previousNumber)
+      removeLocalDraft(post.githubIssueNumber)
+      setDirty(false)
+      setDraftSaveState('idle')
+      setLastAutosavedAt(null)
+      setRecovery(null)
       setMessage(draft ? '草稿已保存到 GitHub Issue。' : '文章已发布，页面缓存已触发更新。')
       await loadPosts()
     } catch (requestError) {
@@ -191,12 +259,40 @@ export default function AdminPage () {
     }
   }
 
+  function restoreRecovery () {
+    if (!recovery) return
+    const nextForm = normalizeDraftForm(recovery.form)
+    if (!nextForm) {
+      setError('本地草稿内容无效，无法恢复。')
+      return
+    }
+    setForm(nextForm)
+    setCurrentNumber(recovery.number)
+    if (recovery.number === null) setCurrentPost(null)
+    setDirty(true)
+    setDraftSaveState('saved')
+    setLastAutosavedAt(recovery.updatedAt)
+    setRecovery(null)
+    setError('')
+    setMessage('已恢复本地草稿。确认内容后，请手动保存为草稿或发布。')
+  }
+
+  function discardRecovery () {
+    if (!recovery) return
+    removeLocalDraft(recovery.number)
+    setRecovery(null)
+    setDirty(false)
+    setDraftSaveState('idle')
+    setLastAutosavedAt(null)
+    setMessage('已丢弃本地草稿备份。')
+  }
+
   return (
     <>
       <Head>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <Container title="写作后台 · 管理员" description="Nobelium 管理员写作后台" headerMeta="管理员">
+      <Container title="写作后台 · 管理员" description="Nobelium 管理员写作后台" headerMeta="管理员" robots="noindex, nofollow">
         <section className="w-full pb-16">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-[var(--ink-line)] pb-5">
             <div>
@@ -307,11 +403,27 @@ export default function AdminPage () {
                     {currentPost?.githubIssueUrl && (
                       <a href={currentPost.githubIssueUrl} target="_blank" rel="noreferrer" className="ink-command">GitHub Issue</a>
                     )}
+                    {currentNumber && currentPost?.draft && (
+                      <a href={'/preview/' + currentNumber} target="_blank" rel="noreferrer" className="ink-command">预览已保存草稿</a>
+                    )}
                     {currentPost && !currentPost.draft && currentPost.slug && (
                       <a href={'/' + currentPost.slug} target="_blank" rel="noreferrer" className="ink-command">查看文章</a>
                     )}
                   </div>
                 </div>
+
+                {recovery && (
+                  <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sm border border-[var(--ink-seal)] bg-[var(--ink-seal-soft)] px-4 py-3 text-sm text-[var(--ink-seal)]">
+                    <div>
+                      <strong className="block">发现上次未提交的本地草稿</strong>
+                      <span className="mt-1 block text-xs leading-5">保存于 {formatSavedAt(recovery.updatedAt)}。恢复后可继续编辑，再手动保存到 GitHub。</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className="ink-command" onClick={restoreRecovery}>恢复草稿</button>
+                      <button type="button" className="ink-command" onClick={discardRecovery}>丢弃备份</button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid gap-5">
                   <label className="grid gap-2 text-sm font-medium text-[var(--ink-main)]">
@@ -345,11 +457,15 @@ export default function AdminPage () {
                     <AdminMarkdownEditor value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />
                   </div>
 
+                  {draftSaveState !== 'idle' && dirty && (
+                    <DraftSaveStatus state={draftSaveState} savedAt={lastAutosavedAt} />
+                  )}
+
                   {error && <InlineError>{error}</InlineError>}
                   {message && <p className="rounded-sm border border-[var(--ink-accent)] bg-[var(--ink-accent-soft)] px-3 py-2 text-sm text-[var(--ink-accent)]" role="status">{message}</p>}
 
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--ink-line)] pt-5">
-                    <p className="text-xs leading-5 text-[var(--ink-muted)]">支持 GFM、代码块、表格、图片和 KaTeX 数学公式。</p>
+                    <p className="text-xs leading-5 text-[var(--ink-muted)]">支持 GFM、代码块、表格、图片和 KaTeX 数学公式。编辑内容会先自动保存在本机浏览器。</p>
                     <div className="flex flex-wrap gap-2">
                       <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(true)} className="ink-command disabled:opacity-60">{saving ? '保存中……' : '保存为草稿'}</button>
                       <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(false)} className="ink-command ink-command-primary disabled:opacity-60">{saving ? '保存中……' : currentPost?.draft ? '发布文章' : '更新并发布'}</button>
@@ -365,6 +481,16 @@ export default function AdminPage () {
   )
 }
 
+function DraftSaveStatus ({ state, savedAt }) {
+  if (state === 'error') {
+    return <p className="rounded-sm border border-[var(--ink-seal)] bg-[var(--ink-seal-soft)] px-3 py-2 text-sm text-[var(--ink-seal)]" role="alert">本地自动保存失败，请及时手动保存到 GitHub。</p>
+  }
+  const text = state === 'saved'
+    ? '已自动保存到本机 · ' + formatSavedAt(savedAt)
+    : '停止输入后会自动保存到本机……'
+  return <p className="text-xs leading-5 text-[var(--ink-muted)]" role="status">{text}</p>
+}
+
 function StatusCard ({ children, tone = 'default' }) {
   const toneClass = tone === 'warning'
     ? 'border-[var(--ink-seal)] bg-[var(--ink-seal-soft)] text-[var(--ink-seal)]'
@@ -376,9 +502,116 @@ function InlineError ({ children }) {
   return <p className="rounded-sm border border-[var(--ink-seal)] bg-[var(--ink-seal-soft)] px-3 py-2 text-sm leading-6 text-[var(--ink-seal)]" role="alert">{children}</p>
 }
 
+function createEmptyForm () {
+  return {
+    title: '',
+    slug: '',
+    summary: '',
+    tags: '',
+    date: new Date().toISOString().slice(0, 10),
+    content: '',
+    draft: true
+  }
+}
+
+function findRecovery (number, baselineForm) {
+  const draft = readLocalDraft(number)
+  if (!draft || !hasDraftContent(draft.form)) return null
+  if (sameForm(draft.form, baselineForm)) {
+    removeLocalDraft(number)
+    return null
+  }
+  return {
+    number,
+    form: draft.form,
+    updatedAt: draft.updatedAt
+  }
+}
+
+function readLocalDraft (number) {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(getDraftStorageKey(number))
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    const form = normalizeDraftForm(data?.form)
+    const updatedAt = Number(data?.updatedAt)
+    if (!form || !Number.isFinite(updatedAt)) {
+      removeLocalDraft(number)
+      return null
+    }
+    return { form, updatedAt }
+  } catch (error) {
+    console.warn('Unable to read local draft:', error)
+    return null
+  }
+}
+
+function writeLocalDraft (number, form) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(getDraftStorageKey(number), JSON.stringify({
+    form: normalizeDraftForm(form),
+    updatedAt: Date.now()
+  }))
+}
+
+function removeLocalDraft (number) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(getDraftStorageKey(number))
+  } catch (error) {
+    console.warn('Unable to remove local draft:', error)
+  }
+}
+
+function getDraftStorageKey (number) {
+  return DRAFT_STORAGE_PREFIX + (number === null || number === undefined ? 'new' : String(number))
+}
+
+function normalizeDraftForm (value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return {
+    title: String(value.title || '').slice(0, 180),
+    slug: String(value.slug || '').slice(0, 180),
+    summary: String(value.summary || '').slice(0, 300),
+    tags: String(value.tags || '').slice(0, 1000),
+    date: String(value.date || '').slice(0, 10),
+    content: String(value.content || '').slice(0, 60000),
+    draft: value.draft !== false
+  }
+}
+
+function hasDraftContent (form) {
+  return Boolean(form && [form.title, form.slug, form.summary, form.tags, form.content].some(value => String(value || '').trim()))
+}
+
+function sameForm (left, right) {
+  const a = normalizeDraftForm(left)
+  const b = normalizeDraftForm(right)
+  if (!a || !b) return false
+  return a.title === b.title &&
+    a.slug === b.slug &&
+    a.summary === b.summary &&
+    a.tags === b.tags &&
+    a.date === b.date &&
+    a.content === b.content &&
+    a.draft === b.draft
+}
+
 function formatDateInput (value) {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? new Date().toISOString().slice(0, 10) : date.toISOString().slice(0, 10)
+}
+
+function formatSavedAt (value) {
+  const date = new Date(Number(value))
+  if (Number.isNaN(date.getTime())) return '刚刚'
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 async function requestJson (url, options = {}) {
