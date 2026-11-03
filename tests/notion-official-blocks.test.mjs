@@ -6,11 +6,13 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { NotionRenderer } from 'react-notion-x'
 
 async function loadConverter () {
-  const source = await readFile(
-    new URL('../lib/server/notion-official-blocks.js', import.meta.url),
-    'utf8'
-  )
-  const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`
+  const [source, dependencySource] = await Promise.all([
+    readFile(new URL('../lib/server/notion-official-blocks.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/server/notion-fetch.mjs', import.meta.url), 'utf8')
+  ])
+  const dependencyUrl = `data:text/javascript;base64,${Buffer.from(dependencySource).toString('base64')}`
+  const resolvedSource = source.replace('./notion-fetch.mjs', dependencyUrl)
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(resolvedSource).toString('base64')}`
   return import(moduleUrl)
 }
 
@@ -48,6 +50,9 @@ test('official API blocks render toggle content, tables, links, and rich text', 
       }),
       block('preview-1', 'link_preview', {
         link_preview: { url: 'https://example.com/reference' }
+      }),
+      block('database-1', 'child_database', {
+        child_database: { title: 'Reference database' }
       })
     ],
     'toggle-1': [
@@ -120,6 +125,8 @@ test('official API blocks render toggle content, tables, links, and rich text', 
     assert.match(html, /Taste-Skill/)
     assert.match(html, /Improve UI/)
     assert.match(html, /https:\/\/example.com\/reference/)
+    assert.match(html, /Reference database/)
+    assert.equal(recordMap.block['database-1'].value.type, 'text')
     assert.match(html, /<b>OpenAI Agent SDK<\/b>/)
     assert.match(html, /href="https:\/\/example.com\/agent"/)
     assert.deepEqual(unsupportedBlocks, [])

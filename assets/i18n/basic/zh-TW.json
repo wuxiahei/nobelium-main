@@ -12,7 +12,24 @@
   },
   "POST": {
     "BACK": "返回",
-    "TOP": "回到頂端"
+    "TOP": "回到頂端",
+    "COMMENTS": "留言",
+    "COMMENTS_LOADING": "捲動到這裡後載入留言。",
+    "COMMENTS_GUEST_HINT": "無需登入，填寫暱稱即可留言。",
+    "COMMENTS_UNAVAILABLE": "留言功能尚未設定，請站長設定 GitHub Issues 留言儲存庫。",
+    "COMMENTS_FORM_TITLE": "寫下留言",
+    "COMMENTS_FORM_HINT": "無需登入，暱稱和留言將公開展示。",
+    "COMMENTS_NICKNAME": "暱稱",
+    "COMMENTS_NICKNAME_PLACEHOLDER": "怎麼稱呼你？",
+    "COMMENTS_CONTENT": "留言",
+    "COMMENTS_CONTENT_PLACEHOLDER": "寫下你的想法……",
+    "COMMENTS_SUBMIT": "發布留言",
+    "COMMENTS_SUBMITTING": "正在發布……",
+    "COMMENTS_EMPTY": "還沒有留言，來寫第一條吧。",
+    "COMMENTS_LOAD_ERROR": "留言載入失敗，請重新整理後再試。",
+    "COMMENTS_SUBMIT_ERROR": "留言提交失敗，請稍後再試。",
+    "COMMENTS_SUCCESS": "留言已發布。",
+    "COMMENTS_COUNT": "則留言"
   },
   "PAGE": {
     "ERROR_404": {

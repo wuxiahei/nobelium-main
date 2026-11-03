@@ -12,7 +12,24 @@
   },
   "POST": {
     "BACK": "Back",
-    "TOP": "Top"
+    "TOP": "Top",
+    "COMMENTS": "Comments",
+    "COMMENTS_LOADING": "Comments load when you scroll here.",
+    "COMMENTS_GUEST_HINT": "No sign-in required. Just enter a nickname to leave a comment.",
+    "COMMENTS_UNAVAILABLE": "Comments are not available yet. The site owner needs to configure a GitHub Issues comments repository.",
+    "COMMENTS_FORM_TITLE": "Leave a comment",
+    "COMMENTS_FORM_HINT": "No sign-in required. Your nickname and comment will be public.",
+    "COMMENTS_NICKNAME": "Nickname",
+    "COMMENTS_NICKNAME_PLACEHOLDER": "What should we call you?",
+    "COMMENTS_CONTENT": "Comment",
+    "COMMENTS_CONTENT_PLACEHOLDER": "Share your thoughts...",
+    "COMMENTS_SUBMIT": "Post comment",
+    "COMMENTS_SUBMITTING": "Posting...",
+    "COMMENTS_EMPTY": "No comments yet. Be the first to write one.",
+    "COMMENTS_LOAD_ERROR": "Comments could not be loaded. Refresh and try again.",
+    "COMMENTS_SUBMIT_ERROR": "Your comment could not be posted. Please try again later.",
+    "COMMENTS_SUCCESS": "Your comment has been posted.",
+    "COMMENTS_COUNT": "comments"
   },
   "PAGE": {
     "ERROR_404": {

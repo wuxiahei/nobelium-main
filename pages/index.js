@@ -14,7 +14,7 @@ export async function getStaticProps () {
   const showNext = totalPosts > clientConfig.postsPerPage
   return {
     props: {
-      page: 1, // current page is 1
+      page: 1,
       postsToShow,
       totalPosts,
       showNext
@@ -37,9 +37,18 @@ export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
       headerMeta={`${totalPosts} 篇文章与札记`}
     >
       <HomeHero postCount={totalPosts} />
-      {postsToShow.map(post => (
-        <BlogPost key={post.id} post={post} />
-      ))}
+      <section className="article-index" aria-labelledby="latest-entries-title">
+        <header className="article-index-header">
+          <div>
+            <p className="ink-eyebrow">Latest entries</p>
+            <h2 id="latest-entries-title">近期札记</h2>
+          </div>
+          <p>按发布时间编目 · 共 {totalPosts} 篇</p>
+        </header>
+        {postsToShow.map(post => (
+          <BlogPost key={post.id} post={post} />
+        ))}
+      </section>
       {showNext && <Pagination page={page} showNext={showNext} />}
     </Container>
   )

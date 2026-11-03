@@ -7,8 +7,12 @@ import useTheme from '@/lib/theme'
 import FormattedDate from '@/components/FormattedDate'
 import TagItem from '@/components/TagItem'
 import NotionRenderer from '@/components/NotionRenderer'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 import TableOfContents from '@/components/TableOfContents'
 import AboutResume from '@/components/AboutResume'
+import ArticleActions from '@/components/ArticleActions'
+import ImageLightbox from '@/components/ImageLightbox'
+import { extractMarkdownHeadings } from '@/lib/markdown-outline.mjs'
 
 /**
  * A post renderer
@@ -24,18 +28,27 @@ import AboutResume from '@/components/AboutResume'
 export default function Post (props) {
   const BLOG = useConfig()
   const locale = useLocale()
-  const { post, blockMap, emailHash, fullWidth = false, previousPost, nextPost } = props
+  const { post, blockMap, markdown, emailHash, fullWidth = false, previousPost, nextPost } = props
   const { dark } = useTheme()
   const isAboutPage = post.slug === 'about'
+  const isPage = post.type?.[0] === 'Page'
   const hasAdjacentPosts = previousPost || nextPost
   const contentWidthClass = fullWidth ? 'w-full' : 'max-w-3xl px-4 sm:px-6'
+  const markdownHeadings = post.source === 'github' ? extractMarkdownHeadings(markdown) : []
+  const body = (
+    <ImageLightbox>
+      {post.source === 'github'
+        ? <MarkdownRenderer content={markdown} />
+        : <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />}
+    </ImageLightbox>
+  )
 
   if (isAboutPage) {
     return (
       <article className="book-page flex flex-col pb-2">
         <AboutResume post={post} emailHash={emailHash} />
         <div className="resume-content mt-10 w-full self-center px-4 sm:px-6 md:max-w-3xl">
-          <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />
+          {body}
         </div>
       </article>
     )
@@ -51,7 +64,7 @@ export default function Post (props) {
           {post.title}
         </h1>
       </div>
-      {post.type[0] !== 'Page' && (
+      {!isPage && (
         <nav className={cn(
           'mt-6 flex w-full flex-wrap items-center gap-x-3 gap-y-3 text-sm text-[var(--ink-muted)]',
           contentWidthClass
@@ -68,16 +81,27 @@ export default function Post (props) {
           )}
         </nav>
       )}
+      {!isPage && (
+        <div className={cn('mt-6 w-full lg:hidden', contentWidthClass)}>
+          <TableOfContents blockMap={blockMap} items={markdownHeadings} mobile />
+        </div>
+      )}
       <div className="mt-10 flex self-stretch flex-col items-center lg:flex-row lg:items-start">
         {!fullWidth && <div className="flex-1 hidden lg:block" />}
         <div className={fullWidth ? 'flex-1 pr-4' : 'book-sheet w-full max-w-3xl flex-none px-5 py-8 sm:px-8'}>
-          <NotionRenderer recordMap={blockMap} fullPage={false} darkMode={dark} />
+          {body}
+          {!isPage && <ArticleActions post={post} />}
         </div>
-        <div className={cn('hidden w-full max-w-3xl lg:block lg:w-auto lg:max-w-[unset] lg:min-w-[180px]', fullWidth ? 'flex-none' : 'flex-1')}>
-          {/* `65px` is the height of expanded nav */}
-          {/* TODO: Remove the magic number */}
-          <TableOfContents blockMap={blockMap} className="sticky pt-2" style={{ top: '76px' }} />
-        </div>
+        {!isPage && (
+          <div className={cn('hidden w-full max-w-3xl lg:block lg:w-auto lg:max-w-[unset] lg:min-w-[180px]', fullWidth ? 'flex-none' : 'flex-1')}>
+            <TableOfContents
+              blockMap={blockMap}
+              items={markdownHeadings}
+              className="sticky pt-2"
+              style={{ top: 'var(--article-scroll-offset)' }}
+            />
+          </div>
+        )}
       </div>
       {hasAdjacentPosts && (
         <div className={cn('mt-12 w-full border-t border-[var(--ink-line)] pt-6', contentWidthClass)}>
@@ -111,7 +135,8 @@ export default function Post (props) {
 
 Post.propTypes = {
   post: PropTypes.object.isRequired,
-  blockMap: PropTypes.object.isRequired,
+  blockMap: PropTypes.object,
+  markdown: PropTypes.string,
   emailHash: PropTypes.string.isRequired,
   fullWidth: PropTypes.bool,
   previousPost: PropTypes.object,
