@@ -118,7 +118,7 @@ const SearchLayout = ({ tags, posts, currentTag }) => {
   }
 
   return (
-    <Container title={currentTag ? `#${currentTag} · 文章索引` : '文章索引'} description="按标题、正文、摘要和标签搜索全部文章">
+    <Container layout="search" title={currentTag ? `#${currentTag} · 文章索引` : '文章索引'} description="按标题、正文、摘要和标签搜索全部文章">
       <section className="search-stage">
         <header className="search-header">
           <div>

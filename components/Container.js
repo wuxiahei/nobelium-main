@@ -75,8 +75,11 @@ const Container = ({
         )}
       </Head>
       <div
-        className={`wrapper ${BLOG.font === 'serif' ? 'font-serif' : 'font-sans'
-          }`}
+        className={cn(
+          'wrapper',
+          BLOG.font === 'serif' ? 'font-serif' : 'font-sans',
+          layout === 'search' && 'search-layout'
+        )}
       >
         {layout === 'blog' && <ReadingProgress />}
         <Header
