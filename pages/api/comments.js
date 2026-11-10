@@ -1,3 +1,4 @@
+import { getAdminSession } from '@/lib/server/admin-auth.mjs'
 import {
   CommentsConfigurationError,
   GitHubCommentsError,
@@ -65,7 +66,7 @@ async function handlePost (req, res) {
   }
 
   validateCommentInput(req.body)
-  const comment = await addGuestComment(req.body)
+  const comment = await addGuestComment(req.body, { authenticatedAdmin: Boolean(getAdminSession(req)) })
   return res.status(201).json({ comment })
 }
 

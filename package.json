@@ -18,7 +18,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tests/notion-official-blocks.test.mjs tests/notion-fetch.test.mjs tests/notion-search-text.test.mjs tests/post-metadata-normalization.test.mjs tests/ai-message-validation.test.mjs tests/revalidation.test.mjs tests/github-comments.test.mjs tests/github-posts.test.mjs tests/admin-auth.test.mjs tests/markdown-outline.test.mjs tests/search-index.test.mjs tests/image-upload.test.mjs tests/content-preflight.test.mjs tests/image-lifecycle.test.mjs tests/admin-draft-history.test.mjs",
+    "test": "node --test tests/notion-official-blocks.test.mjs tests/notion-fetch.test.mjs tests/notion-search-text.test.mjs tests/post-metadata-normalization.test.mjs tests/ai-message-validation.test.mjs tests/revalidation.test.mjs tests/github-comments.test.mjs tests/github-posts.test.mjs tests/admin-auth.test.mjs tests/markdown-outline.test.mjs tests/search-index.test.mjs tests/image-upload.test.mjs tests/content-preflight.test.mjs tests/image-lifecycle.test.mjs tests/admin-draft-history.test.mjs tests/reading-position.test.mjs tests/editor-commands.test.mjs",
     "postbuild": "next-sitemap --config next-sitemap.config.js",
     "admin:hash-password": "node scripts/hash-admin-password.mjs"
   },

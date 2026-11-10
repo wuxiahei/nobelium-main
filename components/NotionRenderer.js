@@ -4,6 +4,7 @@ import { NotionRenderer as Renderer } from 'react-notion-x'
 import { getTextContent } from 'notion-utils'
 import { FONTS_SANS, FONTS_SERIF } from '@/consts'
 import { useConfig } from '@/lib/config'
+import { NotionContentImage } from '@/components/ContentImage'
 import LazyRender from '@/components/LazyRender'
 
 const MermaidBlock = dynamic(() => {
@@ -156,6 +157,7 @@ function CodeSwitch (props) {
 
 // Lazy-load some heavy components & override the renderers of some block types
 const components = {
+  Image: NotionContentImage,
   /* Lazy-load */
 
   // Code block
@@ -221,6 +223,8 @@ export default function NotionRenderer (props) {
       </style>
       <Renderer
         components={components}
+        forceCustomImages
+        isImageZoomable={false}
         mapPageUrl={mapPageUrl}
         {...props}
       />

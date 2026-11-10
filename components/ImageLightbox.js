@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import PropTypes from 'prop-types'
 import { X } from 'lucide-react'
+import ContentImage from '@/components/ContentImage'
 
 export default function ImageLightbox ({ children }) {
   const rootRef = useRef(null)
@@ -16,7 +17,7 @@ export default function ImageLightbox ({ children }) {
     const makeImagesZoomable = () => {
       root.querySelectorAll('img').forEach(image => {
         image.dataset.zoomable = 'true'
-        image.tabIndex = 0
+        image.tabIndex = image.complete && image.naturalWidth > 0 ? 0 : -1
         if (!image.getAttribute('role')) image.setAttribute('role', 'button')
         if (!image.getAttribute('aria-label')) {
           image.setAttribute('aria-label', image.alt ? `放大图片：${image.alt}` : '放大图片')
@@ -25,10 +26,16 @@ export default function ImageLightbox ({ children }) {
     }
 
     makeImagesZoomable()
+    root.addEventListener('load', makeImagesZoomable, true)
+    root.addEventListener('error', makeImagesZoomable, true)
     const observer = new MutationObserver(makeImagesZoomable)
     observer.observe(root, { childList: true, subtree: true })
 
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      root.removeEventListener('load', makeImagesZoomable, true)
+      root.removeEventListener('error', makeImagesZoomable, true)
+    }
   }, [])
 
   useEffect(() => {
@@ -40,6 +47,13 @@ export default function ImageLightbox ({ children }) {
 
     const handleKeyDown = event => {
       if (event.key === 'Escape') setPreview(null)
+      if (event.key === 'Tab') {
+        const buttons = [...document.querySelectorAll('.image-lightbox button:not([disabled])')]
+        const first = buttons[0]
+        const last = buttons[buttons.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
 
@@ -65,7 +79,7 @@ export default function ImageLightbox ({ children }) {
 
   function openImage (image) {
     const src = image.currentSrc || image.src
-    if (!src) return
+    if (!src || !image.complete || !image.naturalWidth) return
     const figure = image.closest('figure, .markdown-image')
     const captionNode = figure?.querySelector('figcaption, .markdown-image-caption')
     lastFocusedRef.current = image
@@ -104,8 +118,7 @@ export default function ImageLightbox ({ children }) {
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
           <figure className="image-lightbox-figure">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview.src} alt={preview.alt} />
+            <ContentImage src={preview.src} alt={preview.alt} priority />
             {preview.caption && <figcaption>{preview.caption}</figcaption>}
           </figure>
         </div>,

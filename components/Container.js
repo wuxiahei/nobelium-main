@@ -4,7 +4,6 @@ import { useConfig } from '@/lib/config'
 import Head from 'next/head'
 import PropTypes from 'prop-types'
 import cn from 'classnames'
-import ReadingProgress from '@/components/ReadingProgress'
 // import BlogPost from './BlogPost'
 
 const Container = ({
@@ -81,7 +80,6 @@ const Container = ({
           layout === 'search' && 'search-layout'
         )}
       >
-        {layout === 'blog' && <ReadingProgress />}
         <Header
           navBarTitle={null}
           headerMeta={headerMeta}

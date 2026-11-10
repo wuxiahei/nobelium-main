@@ -211,9 +211,21 @@ If `slug` is omitted, the site derives it from the title and Issue number. If `s
 
 GitHub article pages support GitHub Flavored Markdown, tables, fenced code blocks, images, links, and KaTeX math formulas.
 
+### Comments and reading continuity
+
+Guest comments support initial avatars, replies with a link to the original message, a live character count, and per-article unsent drafts in browser storage. Failed submissions retain the text; successful submissions clear the draft and highlight the new comment. Loading failures can be retried without refreshing the article.
+
+Comments posted on the website while signed in as an administrator receive a verified **博主** badge. The server signs the comment using the existing `ADMIN_SESSION_SECRET`; browser-supplied identity flags are ignored. Rotating this secret removes verification from older badges without deleting their comments. This feature needs no new environment variables or database.
+
+Articles remember partial reading positions in the current browser for up to 90 days and offer **继续阅读** on reopening. Progress follows the article body, excluding comments and the footer. Positions near the beginning or end are cleared, and links to a specific heading take precedence over the resume prompt. Reading history and unsent comments are local to that browser and do not sync between devices.
+
+Article images show loading placeholders and an individual retry action on failure. Publishing, image uploads, copying, and comment submission use consistent status feedback.
+
 ### Markdown writing helpers
 
 The `/admin` editor keeps the Markdown source visible and adds quick controls for headings, lists, quotes, code, tables, math, dividers, and images. Use **编辑 / 分屏 / 预览** to switch layouts. The toolbar inserts Markdown at the cursor (or at the end when previewing).
+
+Use **专注写作** to hide the archive, metadata, outline, and checks while retaining the title, body, and save controls; press Escape to leave focus mode. Type `/` at the beginning of an empty line to filter insertion commands in Chinese or English, then use arrow keys and Enter or click a command. Slash commands stay inactive inside fenced code blocks. Selecting text opens quick bold, italic, and link controls.
 
 When a draft changes, the editor automatically stores a local browser backup after 1.5 seconds. After a reload it offers to restore that backup; saving to GitHub clears it. The heading outline updates while typing and jumps directly to the selected heading. Local images can be selected, pasted, or dragged into the editor; they are compressed in the browser and uploaded to Vercel Blob. Saved GitHub drafts can be opened with **预览已保存草稿** without exposing them publicly.
 

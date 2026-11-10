@@ -1,4 +1,5 @@
 import { Children } from 'react'
+import ContentImage from '@/components/ContentImage'
 import ReactMarkdown from 'react-markdown'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
@@ -54,13 +55,12 @@ const components = {
     const code = extractText(codeElement).replace(/\n$/, '')
     return <MarkdownCodeBlock code={code} className={codeElement.props.className} />
   },
-  img ({ alt = '', title = '', src = '', ...props }) {
+  img ({ node, alt = '', title = '', src = '', ...props }) {
     const image = parseImageMeta(title)
     const width = image.width ? { width: image.width + '%' } : undefined
     return (
       <span className={'markdown-image markdown-image-' + (image.managed ? image.position : 'default')} style={width} role="figure">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <ContentImage
           src={src}
           alt={alt}
           title={image.managed ? undefined : title}

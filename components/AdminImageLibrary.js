@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import ActionFeedback from '@/components/ActionFeedback'
+import ContentImage from '@/components/ContentImage'
 import { Copy, ImagePlus, RefreshCw, Trash2, X } from 'lucide-react'
 import { extractManagedImagePathnames } from '@/lib/image-lifecycle.mjs'
 
@@ -79,9 +81,10 @@ export default function AdminImageLibrary ({ content, onInsert, onClose }) {
         </div>
       </div>
 
-      {error && <p className="admin-image-library-error" role="alert">{error}</p>}
+      <ActionFeedback state="error" onRetry={loadImages} retryLabel="重新加载图片库">{error}</ActionFeedback>
 
-      {loading && <p className="admin-image-library-empty">正在读取图片库……</p>}
+      <ActionFeedback state="loading">{loading ? '正在读取图片库…' : ''}</ActionFeedback>
+      <ActionFeedback>{copied ? '图片网址已复制。' : ''}</ActionFeedback>
       {!loading && !error && images.length === 0 && (
         <p className="admin-image-library-empty">图片库还是空的。上传图片后，它会留在这里供其他文章复用。</p>
       )}
@@ -95,8 +98,7 @@ export default function AdminImageLibrary ({ content, onInsert, onClose }) {
             return (
               <article className="admin-image-card" key={image.pathname}>
                 <div className="admin-image-card-preview">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image.url} alt="" loading="lazy" decoding="async" />
+                  <ContentImage src={image.url} alt={getFileName(image.pathname)} />
                   <span className={cannotDelete ? 'is-used' : 'is-orphan'}>
                     {cannotDelete ? `引用 ${referenceCount}` : '未被引用'}
                   </span>

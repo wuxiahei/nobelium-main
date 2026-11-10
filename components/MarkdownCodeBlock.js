@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import ActionFeedback from '@/components/ActionFeedback'
 import { Check, Copy } from 'lucide-react'
 import { copyTextToClipboard } from '@/lib/clipboard.mjs'
 import {
@@ -56,6 +57,7 @@ export default function MarkdownCodeBlock ({ code, className }) {
           <span>{copyState === 'copied' ? '已复制' : copyState === 'failed' ? '复制失败' : '复制'}</span>
         </button>
       </div>
+      {copyState !== 'idle' && <ActionFeedback state={copyState === 'failed' ? 'error' : 'success'}>{copyState === 'failed' ? '复制失败，请选中代码手动复制。' : '代码已复制。'}</ActionFeedback>}
       <pre>
         <code
           className={normalizedLanguage ? `language-${normalizedLanguage}` : undefined}

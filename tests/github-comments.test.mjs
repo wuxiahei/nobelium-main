@@ -200,3 +200,65 @@ function restoreEnv (key, value) {
     process.env[key] = value
   }
 }
+test('admin badges require a server signature bound to the article and comment content', t => {
+  const previous = process.env.ADMIN_SESSION_SECRET
+  process.env.ADMIN_SESSION_SECRET = 'test-only-comment-secret-32-characters-long'
+  t.after(() => restoreEnv('ADMIN_SESSION_SECRET', previous))
+  const input = { pageId: 'article-1', nickname: '博主', content: '管理员回复', replyTo: '42', isAdmin: true }
+  const guest = createCommentBody(input)
+  assert.equal(parseCommentBody(guest, 'article-1').isAdmin, undefined)
+  const signed = createCommentBody(input, { authenticatedAdmin: true })
+  assert.equal(parseCommentBody(signed, 'article-1').isAdmin, true)
+  assert.equal(parseCommentBody(signed, 'article-1').replyTo, '42')
+  assert.equal(parseCommentBody(signed, 'article-2').isAdmin, undefined)
+  const encoded = signed.match(/nobelium-guest-comment:([A-Za-z0-9_-]+)/)[1]
+  const data = JSON.parse(Buffer.from(encoded, 'base64url').toString())
+  data.content = '伪造的内容'
+  const forged = signed.replace(encoded, Buffer.from(JSON.stringify(data)).toString('base64url'))
+  assert.equal(parseCommentBody(forged, 'article-1').isAdmin, undefined)
+  process.env.ADMIN_SESSION_SECRET = 'rotated-test-secret-32-characters-long'
+  assert.equal(parseCommentBody(signed, 'article-1').isAdmin, undefined)
+})
+
+test('rejects invalid reply identifiers and ignores client-supplied admin fields', () => {
+  const base = { pageId: 'article', nickname: 'reader', content: 'reply' }
+  for (const replyTo of ['-1', '0', '../42', '1e3', 42, {}, '9'.repeat(21)]) {
+    assert.throws(() => validateCommentInput({ ...base, replyTo }), /回复的留言标识无效/)
+  }
+  assert.equal(validateCommentInput({ ...base, isAdmin: true, authorProof: 'forged' }).isAdmin, undefined)
+  assert.equal(validateCommentInput({ ...base, replyTo: '123' }).replyTo, '123')
+})
+
+test('only allows replies to a recognized comment on the same article', async t => {
+  const previousRepo = process.env.COMMENTS_GITHUB_REPO
+  const previousToken = process.env.COMMENTS_GITHUB_TOKEN
+  const previousFetch = globalThis.fetch
+  process.env.COMMENTS_GITHUB_REPO = 'owner/comments'
+  process.env.COMMENTS_GITHUB_TOKEN = 'server-only-token'
+  let writes = 0
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(url).pathname
+    if (options.method === 'POST') {
+      writes++
+      return mockResponse({ id: 88, created_at: '2026-11-10T12:00:00Z' }, 201)
+    }
+    if (path.endsWith('/issues')) return mockResponse([{ number: 7, title: issueTitleForPage('article') }])
+    if (path.endsWith('/comments')) return mockResponse([
+      { id: 42, body: createCommentBody({ nickname: 'reader', content: 'original' }) },
+      { id: 43, body: 'unrecognized GitHub comment' }
+    ])
+    throw new Error('Unexpected URL')
+  }
+  t.after(() => {
+    restoreEnv('COMMENTS_GITHUB_REPO', previousRepo)
+    restoreEnv('COMMENTS_GITHUB_TOKEN', previousToken)
+    globalThis.fetch = previousFetch
+  })
+  const base = { pageId: 'article', nickname: 'reader', content: 'reply' }
+  for (const replyTo of ['43', '999']) await assert.rejects(addGuestComment({ ...base, replyTo }), /要回复的留言不存在/)
+  assert.equal(writes, 0)
+  const result = await addGuestComment({ ...base, replyTo: '42', isAdmin: true })
+  assert.equal(result.replyTo, '42')
+  assert.equal(result.isAdmin, undefined)
+  assert.equal(writes, 1)
+})

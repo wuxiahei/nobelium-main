@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Head from 'next/head'
 import { AlertTriangle, CheckCircle2, Eye, FilePlus2, LogOut, Save, ShieldCheck, XCircle } from 'lucide-react'
 import Container from '@/components/Container'
+import ActionFeedback from '@/components/ActionFeedback'
 import AdminDraftPreview from '@/components/AdminDraftPreview'
 import AdminMarkdownEditor from '@/components/AdminMarkdownEditor'
 import { appendDraftSnapshot, normalizeDraftSnapshots } from '@/lib/admin-draft-history.mjs'
@@ -12,6 +13,8 @@ const AUTOSAVE_DELAY_MS = 1500
 const EMPTY_FORM = createEmptyForm()
 
 export default function AdminPage () {
+  const [focusMode, setFocusMode] = useState(false)
+  const focusButtonRef = useRef(null)
   const [session, setSession] = useState(null)
   const [checkingSession, setCheckingSession] = useState(true)
   const [posts, setPosts] = useState([])
@@ -38,6 +41,18 @@ export default function AdminPage () {
     currentNumber,
     posts
   }), [form, currentNumber, posts])
+
+  useEffect(() => {
+    if (!focusMode) return
+    const exit = event => {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
+        setFocusMode(false)
+        focusButtonRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', exit)
+    return () => window.removeEventListener('keydown', exit)
+  }, [focusMode])
 
   const loadPosts = useCallback(async () => {
     setLoadingPosts(true)
@@ -363,7 +378,7 @@ export default function AdminPage () {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <Container title="写作后台 · 管理员" description="Nobelium 管理员写作后台" headerMeta="管理员" robots="noindex, nofollow">
-        <section className="admin-studio w-full pb-16">
+        <section className={'admin-studio w-full pb-16' + (focusMode ? ' admin-focus-mode' : '')}>
           <header className="admin-studio-header">
             <div>
               <p className="ink-eyebrow mb-2">Editorial desk</p>
@@ -477,6 +492,9 @@ export default function AdminPage () {
                       <p>{currentPost?.updatedAt ? '线上版本已同步' : '内容将保存到 GitHub Issue'}</p>
                     </div>
                     <div className="admin-desk-actions">
+                      <button ref={focusButtonRef} type="button" className="ink-command" aria-pressed={focusMode} onClick={() => setFocusMode(current => !current)}>
+                        {focusMode ? '退出专注 · Esc' : '专注写作'}
+                      </button>
                       <button type="button" className="ink-command" onClick={() => setPreviewOpen(true)}>
                         <Eye className="h-4 w-4" aria-hidden="true" />
                         预览当前内容
@@ -563,7 +581,7 @@ export default function AdminPage () {
 
                         <div className="admin-field admin-editor-field">
                           <span>正文（Markdown）</span>
-                          <AdminMarkdownEditor value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />
+                          <AdminMarkdownEditor key={currentNumber || 'new'} value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />
                         </div>
                       </div>
 
@@ -572,7 +590,7 @@ export default function AdminPage () {
                       )}
 
                       {error && <InlineError>{error}</InlineError>}
-                      {message && <p className="admin-success-message" role="status">{message}</p>}
+                      <ActionFeedback state={saving ? 'loading' : 'success'}>{saving ? '正在保存文章，请稍候…' : message}</ActionFeedback>
 
                       <footer className="admin-save-bar">
                         <p>Ctrl / Cmd + S 保存草稿。正文会先形成本机版本，再同步到 GitHub。</p>
@@ -652,7 +670,7 @@ function StatusCard ({ children, tone = 'default' }) {
 }
 
 function InlineError ({ children }) {
-  return <p className="admin-inline-error" role="alert">{children}</p>
+  return <ActionFeedback state="error">{children}</ActionFeedback>
 }
 
 function createEmptyForm () {

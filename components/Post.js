@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+import ReadingProgress from '@/components/ReadingProgress'
 import PropTypes from 'prop-types'
 import Link from 'next/link'
 import cn from 'classnames'
@@ -26,6 +28,7 @@ import { extractMarkdownHeadings } from '@/lib/markdown-outline.mjs'
  * @prop {boolean} [fullWidth] - Whether in full-width mode
  */
 export default function Post (props) {
+  const bodyRef = useRef(null)
   const BLOG = useConfig()
   const locale = useLocale()
   const { post, blockMap, markdown, emailHash, fullWidth = false, previousPost, nextPost } = props
@@ -56,6 +59,7 @@ export default function Post (props) {
 
   return (
     <article className={cn('book-page flex flex-col pb-2', fullWidth ? 'md:px-24' : 'items-center')}>
+      {!isPage && <ReadingProgress key={post.id || post.slug} articleId={post.id || post.slug} bodyRef={bodyRef} />}
       <div className={cn('w-full', { 'max-w-3xl px-4 sm:px-6': !fullWidth })}>
         <p className="ink-eyebrow mb-4">
           文章
@@ -89,7 +93,7 @@ export default function Post (props) {
       <div className="mt-10 flex self-stretch flex-col items-center lg:flex-row lg:items-start">
         {!fullWidth && <div className="flex-1 hidden lg:block" />}
         <div className={fullWidth ? 'flex-1 pr-4' : 'book-sheet w-full max-w-3xl flex-none px-5 py-8 sm:px-8'}>
-          {body}
+          <div ref={bodyRef} tabIndex={-1} className="reading-body" aria-label="文章正文">{body}</div>
           {!isPage && <ArticleActions post={post} />}
         </div>
         {!isPage && (

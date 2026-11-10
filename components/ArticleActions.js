@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Check, Copy, Share2 } from 'lucide-react'
+import ActionFeedback from '@/components/ActionFeedback'
 import FormattedDate from '@/components/FormattedDate'
 import { copyTextToClipboard } from '@/lib/clipboard.mjs'
 
@@ -54,9 +55,9 @@ export default function ArticleActions ({ post }) {
           {status === 'shared' ? '已分享' : '分享文章'}
         </button>
       </div>
-      <span className="sr-only" role="status">
+      <ActionFeedback state={status === 'failed' ? 'error' : 'success'}>
         {status === 'copied' ? '文章链接已复制' : status === 'failed' ? '复制文章链接失败' : status === 'shared' ? '文章已分享' : ''}
-      </span>
+      </ActionFeedback>
     </footer>
   )
 }
