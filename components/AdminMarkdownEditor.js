@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ActionFeedback from '@/components/ActionFeedback'
-import { filterEditorCommands, getSlashCommand } from '@/lib/editor-commands.mjs'
+import { filterEditorCommands, getSlashCommand, getEditorCommandBlock } from '@/lib/editor-commands.mjs'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import AdminImageLibrary from '@/components/AdminImageLibrary'
 import { extractMarkdownHeadings } from '@/lib/markdown-outline.mjs'
@@ -37,7 +37,7 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024
 const MAX_SOURCE_IMAGE_BYTES = 25 * 1024 * 1024
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 
-export default function AdminMarkdownEditor ({ value, onChange, maxLength = 60000 }) {
+export default function AdminMarkdownEditor ({ value, onChange, maxLength = 60000, source = 'github' }) {
   const editorRef = useRef(null)
   const textareaRef = useRef(null)
   const librarySelectionRef = useRef(null)
@@ -52,7 +52,7 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
   const uploadControllerRef = useRef(null)
   const fileInputRef = useRef(null)
   const imageSelectionRef = useRef(null)
-  const [mode, setMode] = useState('split')
+  const [mode, setMode] = useState(source === 'notion' ? 'edit' : 'split')
   const [imageOpen, setImageOpen] = useState(false)
   const [imageUrl, setImageUrl] = useState('')
   const [imageAlt, setImageAlt] = useState('')
@@ -130,7 +130,7 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
       setImageOpen(true)
       return
     }
-    insertBlock(command.block, command.marker || '', selection)
+    insertBlock(getEditorCommandBlock(command, source), command.marker || '', selection)
   }
 
   function emitValue (nextValue, selectionStart, selectionEnd) {
@@ -223,7 +223,7 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
       return insertBlock('| 列一 | 列二 |\n| --- | --- |\n| 内容 | 内容 |', '内容')
     }
     if (action === 'fold') {
-      return insertBlock('> [!fold] 折叠标题\n>\n> 这里写折叠内容。', '折叠标题')
+      return insertBlock(getEditorCommandBlock({ value: 'fold', block: '> [!fold] 折叠标题\n>\n> 这里写折叠内容。' }, source), '折叠标题')
     }
     if (action === 'formula') return insertBlock('$$\nE = mc^2\n$$', 'E = mc^2')
     if (action === 'divider') return insertBlock('---')
@@ -232,6 +232,7 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
   function buildImageMarkdown (url, alt, position = imagePosition, width = imageWidth) {
     const safeAlt = String(alt || '图片说明').replace(/[[\]]/g, '')
     const safeUrl = String(url || '').trim().replace(/\s/g, '%20').replace(/\)/g, '%29')
+    if (source === 'notion') return '![' + safeAlt + '](' + safeUrl + ')'
     const title = position === 'full' ? 'full 100%' : position + ' ' + width + '%'
     return '![' + safeAlt + '](' + safeUrl + ' "' + title + '")'
   }
@@ -418,9 +419,9 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
 
         <div className="admin-editor-toolbar-group">
           <button type="button" className="admin-editor-tool" disabled={uploading} onClick={openImagePicker}>{uploading ? '上传中...' : '上传图片'}</button>
-          <button type="button" className="admin-editor-tool" onClick={() => { imageSelectionRef.current = getSelection(); setImageOpen(current => !current) }}>图片摆放</button>
+          <button type="button" className="admin-editor-tool" onClick={() => { imageSelectionRef.current = getSelection(); setImageOpen(current => !current) }}>{source === 'notion' ? '插入图片链接' : '图片摆放'}</button>
           <button type="button" className="admin-editor-tool" onClick={openImageLibrary}>图片库</button>
-          <button type="button" className="admin-editor-tool" onClick={() => insertBlock('> [!fold] 折叠标题\n>\n> 这里写折叠内容。', '折叠标题')}>折叠块</button>
+          <button type="button" className="admin-editor-tool" onClick={() => insertBlock(getEditorCommandBlock({ value: 'fold', block: '> [!fold] 折叠标题\n>\n> 这里写折叠内容。' }, source), '折叠标题')}>折叠块</button>
           <div className="admin-editor-modes" role="group" aria-label="编辑模式">
             {MODES.map(item => (
               <button
@@ -437,6 +438,7 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
         </div>
       </fieldset>
 
+      {source === 'notion' && <p className="admin-draft-status">支持 Markdown 与 Notion 折叠块。分栏、颜色等专用排版以 Notion 中的效果为准；图片环绕和宽度请在 Notion 中调整。</p>}
       <ActionFeedback state={uploadError ? 'error' : uploading ? 'loading' : 'success'}>
         {uploadError || (uploading ? '正在压缩并上传图片…' : uploadSuccess)}
       </ActionFeedback>
@@ -467,13 +469,13 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <label className="grid gap-1 text-xs font-medium text-[var(--ink-muted)]">
               <span>位置</span>
-              <select value={imagePosition} onChange={event => setImagePosition(event.target.value)} className="admin-editor-select">
+              <select disabled={source === 'notion'} value={imagePosition} onChange={event => setImagePosition(event.target.value)} className="admin-editor-select">
                 {IMAGE_POSITIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
             </label>
             <label className="grid gap-1 text-xs font-medium text-[var(--ink-muted)]">
               <span>宽度</span>
-              <select value={imagePosition === 'full' ? 100 : imageWidth} disabled={imagePosition === 'full'} onChange={event => setImageWidth(Number(event.target.value))} className="admin-editor-select">
+              <select value={imagePosition === 'full' ? 100 : imageWidth} disabled={source === 'notion' || imagePosition === 'full'} onChange={event => setImageWidth(Number(event.target.value))} className="admin-editor-select">
                 {IMAGE_WIDTHS.map(width => <option key={width} value={width}>{width}%</option>)}
               </select>
             </label>
@@ -583,8 +585,9 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
 function getContentStats (content) {
   const lines = content ? content.split('\n').length : 0
   const images = (content.match(/!\[[^\]]*\]\([^)]*\)/g) || []).length
-  const folds = (content.match(/^>\s*\[!fold\]/gim) || []).length
-  return { characters: content.length, lines, images, folds }
+  const markdownFolds = (content.match(/^>\s*\[!fold\]/gim) || []).length
+  const notionFolds = (content.match(/<toggle\b/gi) || []).length
+  return { characters: content.length, lines, images, folds: markdownFolds + notionFolds }
 }
 
 function getImageAlt (fileName) {

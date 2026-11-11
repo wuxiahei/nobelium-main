@@ -7,6 +7,7 @@ import AdminDraftPreview from '@/components/AdminDraftPreview'
 import AdminMarkdownEditor from '@/components/AdminMarkdownEditor'
 import { appendDraftSnapshot, normalizeDraftSnapshots } from '@/lib/admin-draft-history.mjs'
 import { runContentPreflight } from '@/lib/content-preflight.mjs'
+import { getAdminPostKey, getAdminPostUrl } from '@/lib/admin-post-identity.mjs'
 
 const DRAFT_STORAGE_PREFIX = 'nobelium:admin-draft:'
 const AUTOSAVE_DELAY_MS = 1500
@@ -18,6 +19,7 @@ export default function AdminPage () {
   const [session, setSession] = useState(null)
   const [checkingSession, setCheckingSession] = useState(true)
   const [posts, setPosts] = useState([])
+  const [sourceWarnings, setSourceWarnings] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [currentNumber, setCurrentNumber] = useState(null)
   const [currentPost, setCurrentPost] = useState(null)
@@ -36,11 +38,16 @@ export default function AdminPage () {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [conflict, setConflict] = useState(false)
   const savePostRef = useRef(null)
+  const isNotion = currentPost?.source === 'notion'
+  const canWrite = isNotion ? session?.notionWriteConfigured : session?.writeConfigured
+  const contentLocked = isNotion && currentPost.contentEditable === false
+  const fieldLocked = field => isNotion && !currentPost.editableFields?.[field]
   const preflight = useMemo(() => runContentPreflight(form, {
     mode: 'publish',
     currentNumber,
-    posts
-  }), [form, currentNumber, posts])
+    posts,
+    skipContent: contentLocked
+  }), [form, currentNumber, posts, contentLocked])
 
   useEffect(() => {
     if (!focusMode) return
@@ -59,6 +66,7 @@ export default function AdminPage () {
     try {
       const data = await requestJson('/api/admin/posts')
       setPosts(Array.isArray(data.posts) ? data.posts : [])
+      setSourceWarnings(data.warnings || [])
     } catch (requestError) {
       if (requestError.status === 401) {
         setSession(current => current ? { ...current, authenticated: false } : current)
@@ -130,7 +138,7 @@ export default function AdminPage () {
     const handleShortcut = event => {
       if (!session?.authenticated || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 's') return
       event.preventDefault()
-      savePostRef.current?.(true)
+      savePostRef.current?.()
     }
     window.addEventListener('keydown', handleShortcut)
     return () => window.removeEventListener('keydown', handleShortcut)
@@ -189,18 +197,18 @@ export default function AdminPage () {
     setMessage('')
     setSaving(true)
     try {
-      const data = await requestJson('/api/admin/posts/' + number)
+      const data = await requestJson(getAdminPostUrl(number))
       const post = data.post
       const nextForm = {
         title: post.title || '',
         slug: post.slug || '',
         summary: post.summary || '',
         tags: Array.isArray(post.tags) ? post.tags.join(', ') : '',
-        date: formatDateInput(post.date),
+        date: post.source === 'notion' ? String(post.date || '').slice(0, 10) : formatDateInput(post.date),
         content: data.content || '',
         draft: Boolean(post.draft)
       }
-      setCurrentNumber(post.githubIssueNumber)
+      setCurrentNumber(getAdminPostKey(post))
       setCurrentPost(post)
       setForm(nextForm)
       setDirty(false)
@@ -208,7 +216,7 @@ export default function AdminPage () {
       setLastAutosavedAt(null)
       setConflict(false)
       setPreviewOpen(false)
-      setRecovery(findRecovery(post.githubIssueNumber, nextForm))
+      setRecovery(findRecovery(getAdminPostKey(post), nextForm))
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -263,13 +271,14 @@ export default function AdminPage () {
     setConflict(false)
   }
 
-  async function savePost (draft) {
+  async function savePost (draft = isNotion ? Boolean(currentPost?.draft) : true) {
+    if (saving) return
     setSaving(true)
     setError('')
     setMessage('')
 
-    if (!session?.writeConfigured) {
-      setError('写文章尚未配置：请设置 CONTENT_GITHUB_REPO 和 CONTENT_GITHUB_TOKEN。')
+    if (!canWrite) {
+      setError(isNotion ? 'Notion 编辑尚未配置，请检查集成令牌和数据库 ID。' : '写文章尚未配置：请设置 CONTENT_GITHUB_REPO 和 CONTENT_GITHUB_TOKEN。')
       setSaving(false)
       return
     }
@@ -277,7 +286,8 @@ export default function AdminPage () {
     const checks = runContentPreflight(form, {
       mode: draft ? 'draft' : 'publish',
       currentNumber,
-      posts
+      posts,
+      skipContent: contentLocked
     })
     if (!checks.ready) {
       setError(checks.errors[0]?.message || '发布检查未通过。')
@@ -289,10 +299,11 @@ export default function AdminPage () {
       ...form,
       tags: form.tags.split(',').map(tag => tag.trim()).filter(Boolean),
       draft,
+      ...(isNotion ? { expectedRevision: currentPost.revision, ...(contentLocked ? { content: undefined } : {}) } : {}),
       ...(currentNumber && currentPost?.updatedAt ? { expectedUpdatedAt: currentPost.updatedAt } : {})
     }
     const previousNumber = currentNumber
-    const url = currentNumber ? '/api/admin/posts/' + currentNumber : '/api/admin/posts'
+    const url = currentNumber ? getAdminPostUrl(currentNumber) : '/api/admin/posts'
 
     try {
       const data = await requestJson(url, {
@@ -300,7 +311,7 @@ export default function AdminPage () {
         body: JSON.stringify(payload)
       })
       const post = data.post
-      setCurrentNumber(post.githubIssueNumber)
+      setCurrentNumber(getAdminPostKey(post))
       setCurrentPost(post)
       setForm(current => ({
         ...current,
@@ -308,25 +319,27 @@ export default function AdminPage () {
         slug: post.slug || '',
         summary: post.summary || '',
         tags: (post.tags || []).join(', '),
-        date: formatDateInput(post.date),
+        date: post.source === 'notion' ? String(post.date || '').slice(0, 10) : formatDateInput(post.date),
+        ...(typeof data.content === 'string' ? { content: data.content } : {}),
         draft: Boolean(post.draft)
       }))
-      removeLocalDraft(null)
       removeLocalDraft(previousNumber)
-      removeLocalDraft(post.githubIssueNumber)
+      removeLocalDraft(getAdminPostKey(post))
       setDirty(false)
       setDraftSaveState('idle')
       setLastAutosavedAt(null)
       setRecovery(null)
       setConflict(false)
-      setMessage(draft ? '草稿已保存到 GitHub Issue；可按 Ctrl / Cmd + S 再次保存。' : '文章已发布，页面缓存已触发更新。')
+      const savedMessage = isNotion ? '文章已保存回 Notion。' : draft ? '草稿已保存到 GitHub Issue。' : '文章已发布。'
+      const cacheMessage = data.revalidation?.failed?.length ? '部分页面缓存暂未刷新，请稍后查看。' : '页面缓存已触发更新。'
+      setMessage([savedMessage, cacheMessage, ...(data.warnings || [])].join(' '))
       await loadPosts()
     } catch (requestError) {
       if (requestError.status === 401) {
         setSession(current => current ? { ...current, authenticated: false } : current)
       }
+      persistCurrentDraft()
       if (requestError.status === 409) {
-        persistCurrentDraft()
         setConflict(true)
       }
       setError(requestError.message)
@@ -350,7 +363,7 @@ export default function AdminPage () {
     if (recovery.number === null) {
       setCurrentPost(null)
     } else {
-      setCurrentPost(current => current || posts.find(post => post.githubIssueNumber === recovery.number) || null)
+      setCurrentPost(current => current || posts.find(post => getAdminPostKey(post) === recovery.number) || null)
     }
     setDirty(true)
     setDraftSaveState('saved')
@@ -383,7 +396,7 @@ export default function AdminPage () {
             <div>
               <p className="ink-eyebrow mb-2">Editorial desk</p>
               <h1>写作后台</h1>
-              <p>GitHub Issue 负责可版本化写作，Notion 继续负责原有内容与发布生态。</p>
+              <p>统一管理 GitHub 与 Notion 文章，修改会保存回文章原来的来源。</p>
             </div>
             {session?.authenticated && (
               <div className="admin-user-badge">
@@ -457,28 +470,30 @@ export default function AdminPage () {
                     </div>
                     <span>{posts.length}</span>
                   </div>
-                  <button type="button" className="ink-command ink-command-primary admin-new-post" onClick={startNewPost}>
+                  <button type="button" className="ink-command ink-command-primary admin-new-post" disabled={saving || !session.writeConfigured} onClick={startNewPost}>
                     <FilePlus2 className="h-4 w-4" aria-hidden="true" />
-                    新建文章
+                    新建 GitHub 文章
                   </button>
                   <div className="admin-archive-label">
-                    <span>GitHub Issues</span>
+                    <span>GitHub · Notion</span>
                     {loadingPosts && <span>读取中</span>}
                   </div>
+                  {sourceWarnings.map(warning => <InlineError key={warning}>{warning}</InlineError>)}
                   <div className="admin-archive-list">
                     {!loadingPosts && posts.length === 0 && (
-                      <p className="admin-archive-empty">还没有 GitHub 文章。新建后会创建一个带 nobelium-post 标签的 Issue。</p>
+                      <p className="admin-archive-empty">暂无可管理的文章。Notion 文章需来自已连接的博客数据库，类型为 Post 或 Page。</p>
                     )}
                     {posts.map(post => (
                       <button
-                        key={post.githubIssueNumber}
+                        key={getAdminPostKey(post)}
                         type="button"
-                        onClick={() => openPost(post.githubIssueNumber)}
-                        className={'admin-archive-item' + (currentNumber === post.githubIssueNumber ? ' is-active' : '')}
+                        disabled={saving}
+                        onClick={() => openPost(getAdminPostKey(post))}
+                        className={'admin-archive-item' + (currentNumber === getAdminPostKey(post) ? ' is-active' : '')}
                       >
                         <span className={'admin-archive-status ' + (post.draft ? 'is-draft' : 'is-live')}>{post.draft ? '草稿' : '已发布'}</span>
                         <strong>{post.title}</strong>
-                        <small>#{post.githubIssueNumber} · {formatArchiveDate(post.date)}</small>
+                        <small>{post.source === 'notion' ? 'Notion' : 'GitHub #' + post.githubIssueNumber} · {formatArchiveDate(post.updatedAt || post.date)}</small>
                       </button>
                     ))}
                   </div>
@@ -487,9 +502,9 @@ export default function AdminPage () {
                 <main className="admin-writing-desk">
                   <header className="admin-desk-header">
                     <div>
-                      <p className="ink-eyebrow">{currentNumber ? 'Issue #' + currentNumber : 'New entry'}</p>
+                      <p className="ink-eyebrow">{currentNumber ? (isNotion ? 'Notion article' : 'Issue #' + currentNumber) : 'New entry'}</p>
                       <h2>{currentNumber ? '编辑文章' : '新建文章'}</h2>
-                      <p>{currentPost?.updatedAt ? '线上版本已同步' : '内容将保存到 GitHub Issue'}</p>
+                      <p>{isNotion ? '修改将保存回原 Notion 页面' : currentPost?.updatedAt ? '线上版本已同步' : '新文章将保存到 GitHub Issue'}</p>
                     </div>
                     <div className="admin-desk-actions">
                       <button ref={focusButtonRef} type="button" className="ink-command" aria-pressed={focusMode} onClick={() => setFocusMode(current => !current)}>
@@ -499,10 +514,11 @@ export default function AdminPage () {
                         <Eye className="h-4 w-4" aria-hidden="true" />
                         预览当前内容
                       </button>
+                      {currentPost?.notionUrl && <a href={currentPost.notionUrl} target="_blank" rel="noreferrer" className="ink-command">在 Notion 中编辑</a>}
                       {currentPost?.githubIssueUrl && (
                         <a href={currentPost.githubIssueUrl} target="_blank" rel="noreferrer" className="ink-command">GitHub Issue</a>
                       )}
-                      {currentNumber && currentPost?.draft && (
+                      {currentNumber && !isNotion && currentPost?.draft && (
                         <a href={'/preview/' + currentNumber} target="_blank" rel="noreferrer" className="ink-command">已保存草稿</a>
                       )}
                       {currentPost && !currentPost.draft && currentPost.slug && (
@@ -511,8 +527,8 @@ export default function AdminPage () {
                     </div>
                   </header>
 
-                  {!session.writeConfigured && (
-                    <InlineError>写文章还需要在 Vercel 配置 CONTENT_GITHUB_REPO 和具有 Issues 读写权限的 CONTENT_GITHUB_TOKEN。</InlineError>
+                  {!canWrite && (
+                    <InlineError>{isNotion ? '请检查 Notion 集成令牌、数据库连接和更新内容权限。' : '新建 GitHub 文章需要配置 CONTENT_GITHUB_REPO 和具有 Issues 读写权限的 CONTENT_GITHUB_TOKEN；已有 Notion 文章可从左侧打开。'}</InlineError>
                   )}
 
                   {recovery && (
@@ -546,44 +562,47 @@ export default function AdminPage () {
                         <strong>检测到线上版本冲突</strong>
                         <p>你的当前输入仍保留在本机。请先重新打开这篇文章查看线上版本，再合并需要的修改。</p>
                       </div>
-                      {currentNumber && <button type="button" className="ink-command" onClick={() => openPost(currentNumber)}>重新载入线上版本</button>}
+                      {currentNumber && <button type="button" className="ink-command" disabled={saving} onClick={() => openPost(currentNumber)}>重新载入线上版本</button>}
                     </div>
                   )}
 
                   <div className="admin-desk-grid">
                     <div className="admin-desk-main">
-                      <div className="admin-form-grid">
+                      {isNotion && <p className="admin-draft-status">灰色字段由 Notion 数据库结构决定；特殊排版请在 Notion 中查看。{contentLocked ? currentPost.contentWarning : 'Ctrl / Cmd + S 会保留当前发布状态。'}</p>}
+                      <fieldset disabled={saving} className="admin-form-grid">
                         <label className="admin-field admin-field-title">
                           <span>标题</span>
-                          <input value={form.title} onChange={event => updateField('title', event.target.value)} maxLength={180} required placeholder="给这次思考一个准确的名字" />
+                          <input disabled={fieldLocked('title')} value={form.title} onChange={event => updateField('title', event.target.value)} maxLength={180} required placeholder="给这次思考一个准确的名字" />
                         </label>
 
                         <div className="admin-field-row">
                           <label className="admin-field">
                             <span>日期</span>
-                            <input type="date" value={form.date} onChange={event => updateField('date', event.target.value)} />
+                            <input type="date" disabled={fieldLocked('date')} value={form.date} onChange={event => updateField('date', event.target.value)} />
                           </label>
                           <label className="admin-field">
-                            <span>Slug（可留空自动生成）</span>
-                            <input value={form.slug} onChange={event => updateField('slug', event.target.value)} placeholder="my-post" />
+                            <span>{isNotion ? 'Slug（文章地址）' : 'Slug（可留空自动生成）'}</span>
+                            <input disabled={fieldLocked('slug')} value={form.slug} onChange={event => updateField('slug', event.target.value)} placeholder="my-post" />
                           </label>
                         </div>
 
                         <label className="admin-field">
-                          <span>摘要（可留空自动提取）</span>
-                          <textarea value={form.summary} onChange={event => updateField('summary', event.target.value)} maxLength={300} rows={3} placeholder="用一两句话说明文章解决什么问题" />
+                          <span>{isNotion ? '摘要' : '摘要（可留空自动提取）'}</span>
+                          <textarea disabled={fieldLocked('summary')} value={form.summary} onChange={event => updateField('summary', event.target.value)} maxLength={300} rows={3} placeholder="用一两句话说明文章解决什么问题" />
                         </label>
 
                         <label className="admin-field">
                           <span>标签（英文逗号分隔）</span>
-                          <input value={form.tags} onChange={event => updateField('tags', event.target.value)} placeholder="Next.js, Vercel" />
+                          <input disabled={fieldLocked('tags')} value={form.tags} onChange={event => updateField('tags', event.target.value)} placeholder="Next.js, Vercel" />
                         </label>
 
                         <div className="admin-field admin-editor-field">
                           <span>正文（Markdown）</span>
-                          <AdminMarkdownEditor key={currentNumber || 'new'} value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />
+                          {contentLocked
+                            ? <textarea aria-label="Notion 正文（只读）" readOnly rows={18} value={form.content} />
+                            : <AdminMarkdownEditor key={currentNumber || 'new'} source={isNotion ? 'notion' : 'github'} value={form.content} onChange={value => updateField('content', value)} maxLength={60000} />}
                         </div>
-                      </div>
+                      </fieldset>
 
                       {draftSaveState !== 'idle' && dirty && (
                         <DraftSaveStatus state={draftSaveState} savedAt={lastAutosavedAt} />
@@ -593,15 +612,23 @@ export default function AdminPage () {
                       <ActionFeedback state={saving ? 'loading' : 'success'}>{saving ? '正在保存文章，请稍候…' : message}</ActionFeedback>
 
                       <footer className="admin-save-bar">
-                        <p>Ctrl / Cmd + S 保存草稿。正文会先形成本机版本，再同步到 GitHub。</p>
+                        <p>{isNotion ? 'Ctrl / Cmd + S 保存修改，保留当前发布状态。' : 'Ctrl / Cmd + S 保存草稿。正文会先形成本机版本，再同步到 GitHub。'}</p>
                         <div>
-                          <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(true)} className="ink-command disabled:opacity-60">
-                            <Save className="h-4 w-4" aria-hidden="true" />
-                            {saving ? '保存中……' : '保存为草稿'}
-                          </button>
-                          <button type="button" disabled={saving || !session.writeConfigured} onClick={() => savePost(false)} className="ink-command ink-command-primary disabled:opacity-60">
-                            {saving ? '保存中……' : currentPost?.draft ? '发布文章' : '更新并发布'}
-                          </button>
+                          {isNotion ? <>
+                            {currentPost.editableFields?.draft && <button type="button" disabled={saving || !canWrite} onClick={() => savePost(!currentPost.draft)} className="ink-command disabled:opacity-60">
+                              {currentPost.draft ? '发布文章' : '转为草稿'}
+                            </button>}
+                            <button type="button" disabled={saving || !canWrite} onClick={() => savePost(currentPost.draft)} className="ink-command ink-command-primary disabled:opacity-60">
+                              <Save className="h-4 w-4" aria-hidden="true" />{saving ? '保存中……' : '保存到 Notion'}
+                            </button>
+                          </> : <>
+                            <button type="button" disabled={saving || !canWrite} onClick={() => savePost(true)} className="ink-command disabled:opacity-60">
+                              <Save className="h-4 w-4" aria-hidden="true" />{saving ? '保存中……' : '保存为草稿'}
+                            </button>
+                            <button type="button" disabled={saving || !canWrite} onClick={() => savePost(false)} className="ink-command ink-command-primary disabled:opacity-60">
+                              {saving ? '保存中……' : currentPost?.draft ? '发布文章' : '更新并发布'}
+                            </button>
+                          </>}
                         </div>
                       </footer>
                     </div>
@@ -636,7 +663,7 @@ export default function AdminPage () {
                       </div>
                       <div className="admin-check-note">
                         <strong>本地版本</strong>
-                        <p>最多保留最近 5 个版本。GitHub 保存成功后才会清理对应本机版本。</p>
+                        <p>最多保留最近 5 个版本。文章保存成功后才会清理对应本机版本。</p>
                       </div>
                     </aside>
                   </div>
@@ -654,7 +681,7 @@ export default function AdminPage () {
 
 function DraftSaveStatus ({ state, savedAt }) {
   if (state === 'error') {
-    return <p className="admin-draft-status is-error" role="alert">本地自动保存失败，请及时手动保存到 GitHub。</p>
+    return <p className="admin-draft-status is-error" role="alert">本地自动保存失败，请及时手动保存文章。</p>
   }
   const text = state === 'saved'
     ? '已保存本机版本 · ' + formatSavedAt(savedAt)

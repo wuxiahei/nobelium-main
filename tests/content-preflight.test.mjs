@@ -55,3 +55,20 @@ test('preflight accepts a clean article with managed image and HTTPS link', () =
   assert.equal(result.warnings.length, 0)
   assert.equal(result.imageCount, 1)
 })
+
+
+test('Notion and GitHub identities do not collide during duplicate slug checks', () => {
+  const posts = [
+    { source: 'notion', notionPageId: 'abc', slug: 'shared' },
+    { source: 'github', githubIssueNumber: 12, slug: 'other' }
+  ]
+  const form = { title: 'Notion article', slug: 'shared', content: 'Body' }
+  assert.equal(runContentPreflight(form, { posts, currentNumber: 'notion-abc' }).ready, true)
+  assert.equal(runContentPreflight(form, { posts, currentNumber: 12 }).ready, false)
+  assert.equal(runContentPreflight(form, { posts }).ready, false)
+})
+
+test('metadata edits to protected Notion documents do not validate an uneditable body', () => {
+  assert.equal(runContentPreflight({ title: 'Large Notion page', content: 'a'.repeat(60001) }, { skipContent: true }).ready, true)
+  assert.equal(runContentPreflight({ title: 'Protected Notion page', content: '![](data:image/png;base64,abc)' }, { skipContent: true }).ready, true)
+})

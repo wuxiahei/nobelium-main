@@ -60,6 +60,21 @@ For the About page, create a row with:
 
 The page body can use H2 sections such as `Profile`, `Skills`, `Experience`, `Projects`, and `Contact`.
 
+## 在后台修改 Notion 文章
+
+管理员登录 /admin 后，可以在左侧文章档案中打开 Notion 或 GitHub 文章。修改会保存回原来的页面；Notion 客户端仍可继续编辑，无需额外数据库。
+
+- 沿用服务端的 `NOTION_API_KEY` 和 `NOTION_DATABASE_ID`。集成需要 Read content、Update content 权限，并连接博客数据库。若一个数据库有多个数据源，设置 `NOTION_DATA_SOURCE_ID` 指定博客数据源。
+- 这里只编辑已有 Notion 文章；新建入口仍创建 GitHub 文章。Notion 数据库中的行需使用 `type=Post` 或 `type=Page`。
+- 可修改标题、正文，以及数据库中可写的 slug、摘要、标签、日期。不存在或为公式等只读类型的字段会禁用。
+- “保存到 Notion”和 Ctrl / Cmd + S 保留当前发布状态。状态属性含有 Draft、Published 两个选项时，可额外切换草稿与发布。
+- 普通 Markdown、图片和 Notion 折叠块可在后台修改。分栏等专用语法保留原文，预览以 Notion 为准；图片环绕与宽度请在 Notion 中调整。
+- 正文包含子页面、同步块、未能读取的内容，或超过 60,000 字符时，后台只修改元数据，正文在 Notion 中编辑，避免丢失内容。
+- 保存前检查线上版本。冲突或未能确认完整保存时，保留本机草稿并提示重新载入；Notion 的正文和属性写入不是原子事务，出现此提示后请核对线上内容再重试。
+- 保存后自动刷新文章、列表和标签缓存；部分缓存刷新失败会明确提示。
+
+后台写入使用官方 Markdown API（Notion-Version 2026-03-11、markdown_version v2），不改变站点现有读取接口的版本设置。令牌只用于服务端请求。
+
 ## Environment Variables
 
 Create a `.env` file based on `.env.example`:

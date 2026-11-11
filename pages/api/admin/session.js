@@ -1,6 +1,7 @@
 import { getAdminAuthConfig, getAdminSession } from '@/lib/server/admin-auth.mjs'
 import { sendAdminError } from '@/lib/server/admin-api.mjs'
 import { isGitHubWriteConfigured } from '@/lib/server/github-posts.mjs'
+import { isNotionWriteConfigured } from '@/lib/server/notion-posts.mjs'
 
 export default async function handler (req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0')
@@ -17,6 +18,7 @@ export default async function handler (req, res) {
       authenticated: Boolean(session),
       username: session?.username || null,
       writeConfigured: isGitHubWriteConfigured(),
+      notionWriteConfigured: isNotionWriteConfigured(),
       setupError: config.configured ? null : config.setupError
     })
   } catch (error) {
