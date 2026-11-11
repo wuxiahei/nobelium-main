@@ -32,6 +32,7 @@ export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
 
   return (
     <Container
+      layout="home"
       title={title}
       description={description}
       headerMeta={`${totalPosts} 篇文章与札记`}

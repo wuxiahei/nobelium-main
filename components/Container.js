@@ -77,7 +77,8 @@ const Container = ({
         className={cn(
           'wrapper',
           BLOG.font === 'serif' ? 'font-serif' : 'font-sans',
-          layout === 'search' && 'search-layout'
+          layout === 'search' && 'search-layout',
+          layout === 'home' && 'home-layout'
         )}
       >
         <Header

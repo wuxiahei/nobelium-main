@@ -20,10 +20,7 @@ export default function HomeHero ({ postCount }) {
 
       <div className="home-hero-grid">
         <div className="home-hero-copy">
-          <p className="home-hero-kicker">
-            <span>Editor&apos;s note</span>
-            <span>札记、长文与工作方法</span>
-          </p>
+          <p className="home-hero-kicker">札记、长文与工作方法</p>
           <h1 id="home-hero-title">在纸墨之间，整理持续生长的思考。</h1>
           <p className="home-hero-description">
             {BLOG.description || '记录技术、设计与持续思考的个人知识札记。'}
@@ -64,12 +61,6 @@ export default function HomeHero ({ postCount }) {
             </div>
           </dl>
         </aside>
-      </div>
-
-      <div className="home-hero-footer" aria-hidden="true">
-        <span>01 — 阅读与思考</span>
-        <span>独立出版 / Personal edition</span>
-        <span>持续更新中</span>
       </div>
     </section>
   )
