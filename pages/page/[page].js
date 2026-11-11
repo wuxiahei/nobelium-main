@@ -3,8 +3,11 @@ import BlogPost from '@/components/BlogPost'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
 import { config } from '@/lib/server/config'
+import { useConfig } from '@/lib/config'
+import { getPostSortLabel } from '@/lib/post-order.mjs'
 
 const Page = ({ postsToShow, page, showNext }) => {
+  const { sortBy } = useConfig()
   return (
     <Container headerMeta={`文章档案 · 第 ${page} 页`}>
       <section className="article-index" aria-labelledby="archive-page-title">
@@ -13,7 +16,7 @@ const Page = ({ postsToShow, page, showNext }) => {
             <p className="ink-eyebrow">Archive / Page {String(page).padStart(2, '0')}</p>
             <h2 id="archive-page-title">往期札记</h2>
           </div>
-          <p>按发布时间倒序编目</p>
+          <p>{getPostSortLabel(sortBy)}</p>
         </header>
         {postsToShow && postsToShow.map(post => <BlogPost key={post.id} post={post} />)}
       </section>

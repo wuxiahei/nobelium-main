@@ -3,9 +3,11 @@ import { useConfig } from '@/lib/config'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { splitSearchHighlight } from '@/lib/search-index.mjs'
+import { getPostListDate } from '@/lib/post-order.mjs'
 
 const BlogPost = ({ post, query = '', snippet = '' }) => {
   const BLOG = useConfig()
+  const listDate = getPostListDate(post, BLOG.sortBy)
   const summary = post.summary?.trim()
   const showSearchSnippet = Boolean(query && snippet)
   const shouldShowSummary = !showSearchSnippet && isValidSummary(summary, post.title, post.slug)
@@ -17,8 +19,14 @@ const BlogPost = ({ post, query = '', snippet = '' }) => {
       aria-label={`阅读《${post.title}》`}
     >
       <div className="post-index-date">
-        <span>Published</span>
-        <time><FormattedDate date={post.date} /></time>
+        <span>{listDate.updated ? 'Updated' : 'Published'}</span>
+        {listDate.timestamp !== null
+          ? (
+            <time dateTime={new Date(listDate.timestamp).toISOString()} title={listDate.updated ? '最后更新时间' : '发布时间'}>
+              <FormattedDate date={listDate.timestamp} />
+            </time>
+            )
+          : <span>日期待补充</span>}
       </div>
 
       <article className="post-index-entry">

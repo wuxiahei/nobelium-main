@@ -6,6 +6,7 @@ import Pagination from '@/components/Pagination'
 import HomeHero from '@/components/HomeHero'
 import { getAllPosts } from '@/lib/notion'
 import { useConfig } from '@/lib/config'
+import { getPostSortLabel } from '@/lib/post-order.mjs'
 
 export async function getStaticProps () {
   const posts = (await getAllPosts({ includePages: false })).filter(isHomePost)
@@ -28,7 +29,7 @@ function isHomePost (post) {
 }
 
 export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
-  const { title, description } = useConfig()
+  const { title, description, sortBy } = useConfig()
 
   return (
     <Container
@@ -44,7 +45,7 @@ export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
             <p className="ink-eyebrow">Latest entries</p>
             <h2 id="latest-entries-title">近期札记</h2>
           </div>
-          <p>按发布时间编目 · 共 {totalPosts} 篇</p>
+          <p>{getPostSortLabel(sortBy)} · 共 {totalPosts} 篇</p>
         </header>
         {postsToShow.map(post => (
           <BlogPost key={post.id} post={post} />

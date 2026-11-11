@@ -6,11 +6,14 @@ import Tags from '@/components/Tags'
 import PropTypes from 'prop-types'
 import { RotateCcw, Search, X } from 'lucide-react'
 import { filterAndScorePosts } from '@/lib/search-index.mjs'
+import { useConfig } from '@/lib/config'
+import { getPostSortLabel } from '@/lib/post-order.mjs'
 
 const RECENT_SEARCHES_KEY = 'nobelium:recent-searches'
 
 const SearchLayout = ({ tags, posts, currentTag }) => {
   const router = useRouter()
+  const { sortBy } = useConfig()
   const inputRef = useRef(null)
   const lastUrlQueryRef = useRef(null)
   const [searchValue, setSearchValue] = useState('')
@@ -185,6 +188,7 @@ const SearchLayout = ({ tags, posts, currentTag }) => {
 
           <div className="search-results-summary" role="status">
             <span>共 {results.length} 篇</span>
+            <span>{normalizedQuery ? '按相关度排序' : getPostSortLabel(sortBy)}</span>
             {normalizedQuery && <span>关键词「{normalizedQuery}」</span>}
             {currentTag && <span>标签 #{currentTag}</span>}
             {hasMore && <span>当前显示 {visibleResults.length} 篇</span>}
