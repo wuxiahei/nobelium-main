@@ -173,6 +173,25 @@ test('protects unknown, truncated and synced content while still saving metadata
   state.markdown = { markdown: 'Partial content', truncated: true, unknown_block_ids: [OTHER] }
   doc = await getAdminNotionPost(PAGE)
   assert.equal(doc.post.contentEditable, false)
+  state.markdown = { markdown: '<unknown url="https://notion.so/test">Unsupported</unknown>', truncated: false, unknown_block_ids: [] }
+  doc = await getAdminNotionPost(PAGE)
+  assert.equal(doc.post.contentEditable, false)
+})
+
+test('allows editing around protected Notion link previews without changing their markers', async t => {
+  const state = fixture(t)
+  const preview = '<link-preview url="https://example.com/article" />'
+  state.markdown = { markdown: 'Before\n\n' + preview + '\n\nAfter', truncated: false, unknown_block_ids: [] }
+  const doc = await getAdminNotionPost(PAGE)
+  assert.equal(doc.post.contentEditable, true)
+  const result = await updateNotionPost(PAGE, payload(doc, { content: doc.content + '\n\nNew paragraph.' }))
+  assert.equal(result.content, doc.content + '\n\nNew paragraph.')
+  assert.equal(state.writes.length, 1)
+  assert.ok(state.writes[0].body.update_content.content_updates[0].new_str.includes(preview))
+  await assert.rejects(updateNotionPost(PAGE, payload(result, { content: result.content.replace(preview, '') })), error => error.status === 400)
+  await assert.rejects(updateNotionPost(PAGE, payload(result, { content: result.content.replace('https://example.com/article', 'https://example.com/changed') })), error => error.status === 400)
+  await assert.rejects(updateNotionPost(PAGE, payload(result, { content: result.content + '\n\n<link-preview url="https://example.com/new" />' })), error => error.status === 400)
+  assert.equal(state.writes.length, 1)
 })
 
 test('metadata-only changes never rewrite the article body', async t => {
