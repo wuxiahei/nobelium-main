@@ -6,6 +6,7 @@ import Pagination from '@/components/Pagination'
 import HomeHero from '@/components/HomeHero'
 import { getAllPosts } from '@/lib/notion'
 import { useConfig } from '@/lib/config'
+import { getPostSortLabel } from '@/lib/post-order.mjs'
 
 export async function getStaticProps () {
   const posts = (await getAllPosts({ includePages: false })).filter(isHomePost)
@@ -14,7 +15,7 @@ export async function getStaticProps () {
   const showNext = totalPosts > clientConfig.postsPerPage
   return {
     props: {
-      page: 1, // current page is 1
+      page: 1,
       postsToShow,
       totalPosts,
       showNext
@@ -28,18 +29,28 @@ function isHomePost (post) {
 }
 
 export default function Blog ({ postsToShow, totalPosts, page, showNext }) {
-  const { title, description } = useConfig()
+  const { title, description, sortBy } = useConfig()
 
   return (
     <Container
+      layout="home"
       title={title}
       description={description}
       headerMeta={`${totalPosts} 篇文章与札记`}
     >
       <HomeHero postCount={totalPosts} />
-      {postsToShow.map(post => (
-        <BlogPost key={post.id} post={post} />
-      ))}
+      <section className="article-index" aria-labelledby="latest-entries-title">
+        <header className="article-index-header">
+          <div>
+            <p className="ink-eyebrow">Latest entries</p>
+            <h2 id="latest-entries-title">近期札记</h2>
+          </div>
+          <p>{getPostSortLabel(sortBy)} · 共 {totalPosts} 篇</p>
+        </header>
+        {postsToShow.map(post => (
+          <BlogPost key={post.id} post={post} />
+        ))}
+      </section>
       {showNext && <Pagination page={page} showNext={showNext} />}
     </Container>
   )

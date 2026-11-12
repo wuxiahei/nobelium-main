@@ -1,53 +1,73 @@
 import FormattedDate from '@/components/FormattedDate'
 import { useConfig } from '@/lib/config'
 import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
+import { splitSearchHighlight } from '@/lib/search-index.mjs'
+import { getPostListDate } from '@/lib/post-order.mjs'
 
-const BlogPost = ({ post }) => {
+const BlogPost = ({ post, query = '', snippet = '' }) => {
   const BLOG = useConfig()
+  const listDate = getPostListDate(post, BLOG.sortBy)
   const summary = post.summary?.trim()
-  const shouldShowSummary = isValidSummary(summary, post.title, post.slug)
+  const showSearchSnippet = Boolean(query && snippet)
+  const shouldShowSummary = !showSearchSnippet && isValidSummary(summary, post.title, post.slug)
 
   return (
     <Link
       href={`${BLOG.path}/${post.slug}`}
-      className="group -mx-3 block border-b border-[var(--ink-line)] px-3 py-6 transition-colors hover:bg-[var(--ink-surface)] ink-focus md:py-7"
+      className="post-index-row ink-focus"
+      aria-label={`阅读《${post.title}》`}
     >
-      <article key={post.id} className="transition duration-200 md:grid md:grid-cols-[148px_minmax(0,1fr)] md:gap-8">
-        <div className="mb-3 text-[0.78rem] uppercase tracking-normal text-[var(--ink-muted)] md:mb-0 md:pt-1">
-          <time className="block">
-            <FormattedDate date={post.date} />
-          </time>
-        </div>
-        <div>
-          <header>
-            <h2 className="text-xl font-semibold leading-snug tracking-normal text-[var(--ink-main)] transition-colors group-hover:text-[var(--ink-accent)] md:text-[1.45rem]">
-              {post.title}
-            </h2>
-          </header>
-          {shouldShowSummary && (
-            <p className="mt-3 max-w-2xl line-clamp-2 leading-8 text-[var(--ink-muted)]">
-              {summary}
-            </p>
-          )}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {post.tags.slice(0, 3).map(tag => (
-                <span
-                  key={tag}
-                  className="rounded-sm bg-transparent px-2.5 py-1 text-xs font-medium uppercase tracking-normal text-[var(--ink-muted)] ring-1 ring-[var(--ink-line)]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="post-index-date">
+        <span>{listDate.updated ? 'Updated' : 'Published'}</span>
+        {listDate.timestamp !== null
+          ? (
+            <time dateTime={new Date(listDate.timestamp).toISOString()} title={listDate.updated ? '最后更新时间' : '发布时间'}>
+              <FormattedDate date={listDate.timestamp} />
+            </time>
+            )
+          : <span>日期待补充</span>}
+      </div>
+
+      <article className="post-index-entry">
+        <h2><HighlightText text={post.title} query={query} /></h2>
+        {showSearchSnippet && (
+          <p className="post-index-summary post-index-snippet">
+            <span className="post-index-hit-label">正文命中</span>
+            <HighlightText text={snippet} query={query} />
+          </p>
+        )}
+        {shouldShowSummary && (
+          <p className="post-index-summary">
+            <HighlightText text={summary} query={query} />
+          </p>
+        )}
+        {post.tags && post.tags.length > 0 && (
+          <div className="post-index-tags" aria-label="文章标签">
+            {post.tags.slice(0, 4).map(tag => (
+              <span key={tag}><HighlightText text={tag} query={query} /></span>
+            ))}
+          </div>
+        )}
       </article>
+
+      <span className="post-index-more" aria-hidden="true">
+        <span>阅读札记</span>
+        <ArrowUpRight className="h-4 w-4" />
+      </span>
     </Link>
   )
 }
 
 export default BlogPost
+
+function HighlightText ({ text, query }) {
+  return splitSearchHighlight(text, query).map((part, index) => (
+    part.match
+      ? <mark key={index}>{part.text}</mark>
+      : <span key={index}>{part.text}</span>
+  ))
+}
 
 function isValidSummary (summary, title, slug) {
   if (!summary) return false

@@ -3,6 +3,7 @@ import { clientConfig } from '@/lib/server/config'
 import { useRouter } from 'next/router'
 import cn from 'classnames'
 import { getAllPosts, getPostBlocks } from '@/lib/notion'
+import { getGitHubPostMarkdown } from '@/lib/server/github-posts.mjs'
 import { useLocale } from '@/lib/locale'
 import { useConfig } from '@/lib/config'
 import { createHash } from 'crypto'
@@ -10,7 +11,7 @@ import Container from '@/components/Container'
 import Post from '@/components/Post'
 import Comments from '@/components/Comments'
 
-export default function BlogPost ({ post, blockMap, emailHash, previousPost, nextPost }) {
+export default function BlogPost ({ post, blockMap, markdown, emailHash, previousPost, nextPost }) {
   const router = useRouter()
   const BLOG = useConfig()
   const locale = useLocale()
@@ -33,6 +34,7 @@ export default function BlogPost ({ post, blockMap, emailHash, previousPost, nex
       <Post
         post={post}
         blockMap={blockMap}
+        markdown={markdown}
         emailHash={emailHash}
         fullWidth={fullWidth}
         previousPost={previousPost}
@@ -91,7 +93,10 @@ export async function getStaticProps ({ params: { slug } }) {
   const previousPost = currentIndex >= 0 ? navigablePosts[currentIndex + 1] ?? null : null
   const nextPost = currentIndex >= 0 ? navigablePosts[currentIndex - 1] ?? null : null
 
-  const blockMap = await getPostBlocks(post.id)
+  const blockMap = post.source === 'github' ? null : await getPostBlocks(post.id)
+  const markdown = post.source === 'github'
+    ? await getGitHubPostMarkdown(post.githubIssueNumber)
+    : null
   const emailHash = createHash('md5')
     .update(clientConfig.email)
     .digest('hex')
@@ -99,7 +104,7 @@ export async function getStaticProps ({ params: { slug } }) {
     .toLowerCase()
 
   return {
-    props: { post, blockMap, emailHash, previousPost, nextPost },
+    props: { post, blockMap, markdown, emailHash, previousPost, nextPost },
     revalidate: 300
   }
 }

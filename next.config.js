@@ -1,4 +1,5 @@
 module.exports = {
+  staticPageGenerationTimeout: 180,
   images: {
     domains: ['gravatar.com']
   },
