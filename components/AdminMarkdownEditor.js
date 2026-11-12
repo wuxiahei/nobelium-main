@@ -438,7 +438,7 @@ export default function AdminMarkdownEditor ({ value, onChange, maxLength = 6000
         </div>
       </fieldset>
 
-      {source === 'notion' && <p className="admin-draft-status">支持 Markdown 与 Notion 折叠块。分栏、颜色等专用排版以 Notion 中的效果为准；图片环绕和宽度请在 Notion 中调整。</p>}
+      {source === 'notion' && <p className="admin-draft-status">直接修改文字即可；折叠块、图片和链接预览等 Notion 格式会自动保留，不需要手动补 Markdown 标签。块本身的增删或属性调整请前往 Notion。</p>}
       <ActionFeedback state={uploadError ? 'error' : uploading ? 'loading' : 'success'}>
         {uploadError || (uploading ? '正在压缩并上传图片…' : uploadSuccess)}
       </ActionFeedback>

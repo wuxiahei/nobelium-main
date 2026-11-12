@@ -69,8 +69,10 @@ function fixture (t) {
         assert.equal(command.allow_deleting_content, false)
         assert.equal(body.markdown_version, 'v2')
         if (body.type === 'update_content') {
-          assert.equal(command.content_updates[0].old_str, state.markdown.markdown)
-          state.markdown.markdown = command.content_updates[0].new_str
+          for (const update of command.content_updates) {
+            assert.equal(state.markdown.markdown.split(update.old_str).length - 1, 1)
+            state.markdown.markdown = state.markdown.markdown.replace(update.old_str, update.new_str)
+          }
         } else {
           assert.equal(body.type, 'replace_content')
           state.markdown.markdown = command.new_str
@@ -188,7 +190,9 @@ test('allows editing around protected Notion link previews without changing thei
   const result = await updateNotionPost(PAGE, payload(doc, { content: doc.content + '\n\nNew paragraph.' }))
   assert.equal(result.content, doc.content + '\n\nNew paragraph.')
   assert.equal(state.writes.length, 1)
-  assert.ok(state.writes[0].body.update_content.content_updates[0].new_str.includes(preview))
+  const previewUpdates = state.writes[0].body.update_content.content_updates
+  assert.ok(previewUpdates.length > 0)
+  assert.ok(previewUpdates.every(update => !update.old_str.includes(preview) && !update.new_str.includes(preview)))
   await assert.rejects(updateNotionPost(PAGE, payload(result, { content: result.content.replace(preview, '') })), error => error.status === 400)
   await assert.rejects(updateNotionPost(PAGE, payload(result, { content: result.content.replace('https://example.com/article', 'https://example.com/changed') })), error => error.status === 400)
   await assert.rejects(updateNotionPost(PAGE, payload(result, { content: result.content + '\n\n<link-preview url="https://example.com/new" />' })), error => error.status === 400)
@@ -277,7 +281,76 @@ test('refreshed Notion attachment signatures do not cause a false conflict or bo
   assert.ok(!state.writes[0].path.endsWith('/markdown'))
   const fresh = await getAdminNotionPost(PAGE)
   await updateNotionPost(PAGE, payload(fresh, { content: doc.content + '\n\nNew paragraph' }))
-  assert.ok(state.writes[1].body.update_content.content_updates[0].new_str.includes('Signature=new'))
+  const signatureUpdates = state.writes[1].body.update_content.content_updates
+  assert.ok(signatureUpdates.every(update => !update.old_str.includes('X-Amz-Signature') && !update.new_str.includes('X-Amz-Signature')))
+  assert.ok(state.markdown.markdown.includes('Signature=new'))
+  assert.match(state.markdown.markdown, /New paragraph/)
+})
+
+test('keeps unchanged Notion native blocks out of a text-only save request', async t => {
+  const state = fixture(t)
+  const toggle = '<toggle>折叠标题\n\n折叠内容\n</toggle>'
+  const image = '<image src="https://example.com/image.png" />'
+  const preview = '<link-preview url="https://example.com/article" />'
+  const original = ['开头段落', '<p />', toggle, image, preview, '结尾段落'].join('\n\n')
+  state.markdown = { markdown: original, truncated: false, unknown_block_ids: [] }
+  const doc = await getAdminNotionPost(PAGE)
+  const next = original.replace('结尾段落', '结尾段落，已更新')
+  const result = await updateNotionPost(PAGE, payload(doc, { content: next }))
+  assert.equal(result.content, next)
+  const updates = state.writes[0].body.update_content.content_updates
+  assert.ok(updates.length > 0)
+  assert.ok(updates.every(update => !/<(?:toggle|image|p|link-preview)\b/i.test(update.old_str + update.new_str)))
+})
+
+test('saves text inserted between adjacent Notion native blocks without changing them', async t => {
+  const state = fixture(t)
+  const image = '<image src="https://example.com/image.png" />'
+  const original = image + '<p />'
+  state.markdown = { markdown: original, truncated: false, unknown_block_ids: [] }
+  const doc = await getAdminNotionPost(PAGE)
+  const next = image + '新增文字<p />'
+  const result = await updateNotionPost(PAGE, payload(doc, { content: next }))
+
+  assert.equal(result.content, next)
+  assert.equal(state.markdown.markdown, next)
+  const updates = state.writes[0].body.update_content.content_updates
+  assert.ok(updates.length > 0)
+  assert.ok(updates.every(update => !update.old_str.includes(image) && !update.new_str.includes(image)))
+  assert.ok(updates.every(update => !update.old_str.includes('<p />') && !update.new_str.includes('<p />')))
+})
+test('sends separate small updates for distant edits instead of rewriting the whole article', async t => {
+  const state = fixture(t)
+  const original = '第一段需要修改。\n\n' + '中间这段保持完全不变。'.repeat(12) + '\n\n第三段也需要修改。'
+  state.markdown = { markdown: original, truncated: false, unknown_block_ids: [] }
+  const doc = await getAdminNotionPost(PAGE)
+  const next = original.replace('第一段需要修改。', '第一段已经修改。').replace('第三段也需要修改。', '第三段已经修改。')
+  const result = await updateNotionPost(PAGE, payload(doc, { content: next }))
+  assert.equal(result.content, next)
+  const updates = state.writes[0].body.update_content.content_updates
+  assert.equal(updates.length, 2)
+  assert.ok(updates.every(update => update.old_str.length < 40))
+  assert.ok(updates.every(update => !update.old_str.includes('中间这段保持完全不变。'.repeat(3))))
+})
+
+test('expands duplicate text until each local update matches once', async t => {
+  const state = fixture(t)
+  const original = '重复段落。\n\n重复段落。\n\n结尾'
+  state.markdown = { markdown: original, truncated: false, unknown_block_ids: [] }
+  const doc = await getAdminNotionPost(PAGE)
+  const next = original.replace('\n\n重复段落。\n\n结尾', '\n\n第二个重复段落已修改。\n\n结尾')
+  const result = await updateNotionPost(PAGE, payload(doc, { content: next }))
+  assert.equal(result.content, next)
+  assert.ok(state.writes[0].body.update_content.content_updates.every(update => update.old_str.length > '重复段落。'.length))
+})
+
+test('allows inserting a native toggle with the editor command', async t => {
+  const state = fixture(t)
+  const doc = await getAdminNotionPost(PAGE)
+  const toggle = '<toggle>折叠标题\n\n这里写折叠内容。\n</toggle>'
+  const result = await updateNotionPost(PAGE, payload(doc, { content: doc.content + '\n\n' + toggle }))
+  assert.equal(result.content, doc.content + '\n\n' + toggle)
+  assert.ok(state.writes[0].body.update_content.content_updates.some(update => update.new_str.includes(toggle)))
 })
 
 test('supports filling an empty draft and reports parser warnings', async t => {
