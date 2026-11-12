@@ -38,7 +38,7 @@ function fixture (t) {
     },
     markdown: { markdown: '## Hello\n\nOriginal content.', truncated: false, unknown_block_ids: [] },
     calls: [], writes: [], revision: 0,
-    failProperties: false, failBody: false, denied: false, warning: false, changeDuringRead: false,
+    failProperties: false, failBody: false, networkFailure: false, denied: false, warning: false, changeDuringRead: false,
     bump () { this.revision++; this.page.last_edited_time = new Date(Date.UTC(2026, 10, 1, 0, 0, this.revision)).toISOString() }
   }
   globalThis.fetch = async (url, init = {}) => {
@@ -46,6 +46,7 @@ function fixture (t) {
     const body = init.body ? JSON.parse(init.body) : null
     const method = init.method || 'GET'
     state.calls.push({ path, method, body })
+    if (state.networkFailure && method === 'PATCH') throw new TypeError('private network details')
     const legacyDatabaseRequest = path === '/databases/' + DATABASE || path === '/databases/' + DATABASE + '/query'
     assert.equal(init.headers['Notion-Version'], legacyDatabaseRequest ? '2022-06-28' : '2026-03-11')
     assert.equal(init.headers.Authorization, 'Bearer test-token')
@@ -63,7 +64,7 @@ function fixture (t) {
     if (method === 'PATCH') {
       state.writes.push({ path, body })
       if (path.endsWith('/markdown')) {
-        if (state.failBody) return response({}, 400)
+        if (state.failBody) return response({ code: 'validation_error', message: 'private upstream information' }, 400)
         const command = body.update_content || body.replace_content
         assert.equal(command.allow_deleting_content, false)
         assert.equal(body.markdown_version, 'v2')
@@ -77,7 +78,7 @@ function fixture (t) {
         state.bump()
         return response({ ...state.markdown, ...(state.warning ? { warnings: [{ code: 'normalization' }] } : {}) })
       }
-      if (state.failProperties) return response({}, 400)
+      if (state.failProperties) return response({ code: 'validation_error', message: 'private upstream information' }, 400)
       for (const [id, next] of Object.entries(body.properties)) {
         const field = Object.keys(state.page.properties).find(key => state.page.properties[key].id === id)
         state.page.properties[field] = { ...state.page.properties[field], ...next }
@@ -212,13 +213,57 @@ test('validates field types before sending a body write', async t => {
   assert.equal(state.writes.length, 0)
 })
 
-test('does not retry uncertain writes and exposes paths requiring cache refresh', async t => {
+test('reports a rejected body as unsaved without claiming a partial write', async t => {
+  const state = fixture(t)
+  const doc = await getAdminNotionPost(PAGE)
+  state.failBody = true
+  await assert.rejects(updateNotionPost(PAGE, payload(doc, { title: 'New title', content: 'Rejected body' })), error => {
+    assert.equal(error.status, 400)
+    assert.equal(error.notionCode, 'validation_error')
+    assert.equal(error.writeStage, 'body')
+    assert.match(error.message, /正文未保存/)
+    assert.match(error.message, /validation_error/)
+    assert.doesNotMatch(error.message, /部分修改可能已写入/)
+    assert.doesNotMatch(error.message, /private upstream information/)
+    return true
+  })
+  assert.equal(state.writes.length, 1)
+  assert.equal(state.markdown.markdown, doc.content)
+})
+
+test('reports saved body when the following property write is rejected', async t => {
   const state = fixture(t)
   const doc = await getAdminNotionPost(PAGE)
   state.failProperties = true
-  await assert.rejects(updateNotionPost(PAGE, payload(doc, { title: 'New title', content: 'Saved body' })), error => error.status === 409 && error.changedPosts[0].slug === doc.post.slug)
+  await assert.rejects(updateNotionPost(PAGE, payload(doc, { title: 'New title', content: 'Saved body' })), error => {
+    assert.equal(error.status, 409)
+    assert.equal(error.notionCode, 'validation_error')
+    assert.equal(error.writeStage, 'properties')
+    assert.match(error.message, /正文已保存/)
+    assert.match(error.message, /文章属性未保存/)
+    assert.equal(error.changedPosts[0].slug, doc.post.slug)
+    return true
+  })
   assert.equal(state.writes.length, 2)
   assert.equal(state.markdown.markdown, 'Saved body')
+  assert.equal(state.page.properties.title.title[0].plain_text, 'Notion article')
+})
+
+test('does not retry a network-failed write and marks the result as unconfirmed', async t => {
+  const state = fixture(t)
+  const doc = await getAdminNotionPost(PAGE)
+  state.networkFailure = true
+  await assert.rejects(updateNotionPost(PAGE, payload(doc, { content: 'Possibly saved body' })), error => {
+    assert.equal(error.status, 409)
+    assert.equal(error.writeStage, 'body')
+    assert.equal(error.writeUncertain, true)
+    assert.match(error.message, /保存结果未确认/)
+    assert.doesNotMatch(error.message, /private network details/)
+    assert.equal(error.changedPosts[0].slug, doc.post.slug)
+    return true
+  })
+  assert.equal(state.writes.length, 0)
+  assert.equal(state.calls.filter(call => call.method === 'PATCH').length, 1)
 })
 
 test('refreshed Notion attachment signatures do not cause a false conflict or body rewrite', async t => {
