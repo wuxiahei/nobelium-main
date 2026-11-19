@@ -80,7 +80,7 @@ The page body can use H2 sections such as `Profile`, `Skills`, `Experience`, `Pr
 登录 `/admin` 后，点击右上角 **AI 接口**，可以直接修改 OpenAI-compatible 服务的接口 URL、模型名称、显示名称和 API Key，不需要为了更换模型重新部署。
 
 - 接口 URL 填写基础地址，例如 `https://api.openai.com/v1`；不要附加 `/chat/completions`，服务端会自动拼接。
-- API Key 只通过 HTTPS 提交到服务端。保存后使用 AES-256-GCM 加密并存入私有 Vercel Blob，管理员接口只返回“是否已配置”，不会把 Key 回传到浏览器。
+- API Key 只通过 HTTPS 提交到服务端。保存后使用 AES-256-GCM 加密，并写入与站内图片相同的 Vercel Blob 存储。公共记录中只有 Key 密文；管理员接口只返回“是否已配置”，不会把 Key 回传到浏览器。
 - 留空 API Key 会沿用当前正在使用的 Key；要恢复环境变量配置，可点击 **恢复环境变量配置**。
 - 后台保存需要 `BLOB_READ_WRITE_TOKEN`，以及至少 32 字符的 `ADMIN_SESSION_SECRET`。也可以单独设置 `AI_CONFIG_ENCRYPTION_KEY`，避免轮换管理员会话密钥后影响 AI Key。
 - 尚未保存后台配置时，继续读取 `AI_API_KEY`、`AI_BASE_URL`、`AI_MODEL` 和 `AI_DISPLAY_NAME` 环境变量。后台配置保存后优先使用后台配置。
@@ -132,7 +132,7 @@ GitHub Issue article and admin variables:
 | `ADMIN_PASSWORD` | Legacy plaintext fallback; leave empty when using the hash |
 | `ADMIN_SESSION_SECRET` | Random secret of at least 32 characters used to sign admin sessions |
 | `ADMIN_SESSION_TTL_SECONDS` | Session lifetime, default 12 hours and capped at 7 days |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token used by `/admin` for local image uploads |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token used by `/admin` for local image uploads and encrypted AI settings |
 
 No second GitHub repository is required. `CONTENT_GITHUB_REPO` and `COMMENTS_GITHUB_REPO` can both be `wuxiahei/nobelium-main`, and the two token variables can contain the same fine-grained token. Article Issues use `nobelium-post`/`nobelium-draft` labels; ordinary comment Issues do not use those labels, so the two features stay separate.
 

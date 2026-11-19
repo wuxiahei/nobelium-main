@@ -158,7 +158,7 @@ export default function AdminAISettings ({ onClose }) {
                   </span>
                   <p>
                     {config?.source === 'admin'
-                      ? (config.updatedAt ? `更新于 ${formatDateTime(config.updatedAt)}` : '配置保存在私有 Blob 中')
+                      ? (config.updatedAt ? `更新于 ${formatDateTime(config.updatedAt)}` : '配置已加密保存在 Vercel Blob 中')
                       : '尚未保存后台配置，当前读取 AI_API_KEY、AI_BASE_URL 与 AI_MODEL。'}
                   </p>
                 </div>
@@ -194,6 +194,8 @@ export default function AdminAISettings ({ onClose }) {
                     value={form.baseURL}
                     onChange={event => updateField('baseURL', event.target.value)}
                     placeholder="https://api.openai.com/v1"
+                    autoComplete="url"
+                    spellCheck="false"
                     disabled={busy}
                     required
                   />
@@ -207,6 +209,7 @@ export default function AdminAISettings ({ onClose }) {
                       value={form.model}
                       onChange={event => updateField('model', event.target.value)}
                       placeholder="例如 gpt-4.1-mini"
+                      autoComplete="off"
                       maxLength={160}
                       disabled={busy}
                       required
@@ -218,6 +221,7 @@ export default function AdminAISettings ({ onClose }) {
                       value={form.displayName}
                       onChange={event => updateField('displayName', event.target.value)}
                       placeholder="AI 助手"
+                      autoComplete="off"
                       maxLength={48}
                       disabled={busy}
                       required

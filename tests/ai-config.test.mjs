@@ -8,6 +8,7 @@ import {
   normalizeAIBaseURL,
   normalizeAIDisplayName,
   normalizeAIModel,
+  saveAdminAIConfig,
   toPublicAIConfig
 } from '../lib/server/ai-config.mjs'
 
@@ -162,4 +163,69 @@ test('environment configuration reports malformed values with safe fallbacks', t
   assert.match(config.warning, /AI_BASE_URL 无效/)
   assert.match(config.warning, /AI_MODEL 无效/)
   assert.match(config.warning, /AI_DISPLAY_NAME 无效/)
+})
+
+test('a new API key can overwrite unreadable saved AI configuration', async t => {
+  t.after(restoreOriginalEnv)
+  applyEnv({
+    NODE_ENV: 'production',
+    BLOB_READ_WRITE_TOKEN: 'blob-test-token',
+    ADMIN_SESSION_SECRET: 's'.repeat(40)
+  })
+
+  let readCount = 0
+  let savedRecord = ''
+  let savedOptions = null
+  const result = await saveAdminAIConfig({
+    baseURL: 'https://api.example.com/v1',
+    model: 'example-model',
+    displayName: '写作助手',
+    apiKey: 'sk-new-secret-value'
+  }, {
+    readStoredConfig: async () => {
+      readCount += 1
+      throw new Error('old settings are unreadable')
+    },
+    writeBlob: async (pathname, body, options) => {
+      assert.equal(pathname, 'settings/ai-config-v1.json')
+      savedRecord = body
+      savedOptions = options
+      return { pathname, url: 'https://example.com/settings/ai-config-v1.json' }
+    }
+  })
+
+  assert.equal(readCount, 0)
+  assert.equal(savedOptions.access, 'public')
+  assert.equal(savedOptions.allowOverwrite, true)
+  assert.equal(result.source, 'admin')
+  assert.equal(result.apiKeyConfigured, true)
+  assert.equal(result.warning, '')
+  assert.equal(JSON.parse(savedRecord).version, 1)
+  assert.equal(JSON.stringify(JSON.parse(savedRecord)).includes('sk-new-secret-value'), false)
+})
+
+test('saving without a new key refuses silent fallback when the old key is unreadable', async t => {
+  t.after(restoreOriginalEnv)
+  applyEnv({
+    NODE_ENV: 'production',
+    BLOB_READ_WRITE_TOKEN: 'blob-test-token',
+    ADMIN_SESSION_SECRET: 's'.repeat(40)
+  })
+
+  let writeCount = 0
+  await assert.rejects(
+    saveAdminAIConfig({
+      baseURL: 'https://api.example.com/v1',
+      model: 'example-model',
+      displayName: '写作助手',
+      apiKey: ''
+    }, {
+      readStoredConfig: async () => { throw new Error('old settings are unreadable') },
+      writeBlob: async () => { writeCount += 1 }
+    }),
+    error => error instanceof AIConfigurationError &&
+      error.status === 503 &&
+      /填写新的 API Key/.test(error.message)
+  )
+  assert.equal(writeCount, 0)
 })
