@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -126,7 +127,7 @@ export default function AdminAISettings ({ onClose }) {
 
   const busy = loading || saving || resetting
 
-  return (
+  const dialog = (
     <div className="admin-ai-settings-backdrop" onMouseDown={event => {
       if (event.target === event.currentTarget && !busy) onClose()
     }}>
@@ -279,6 +280,11 @@ export default function AdminAISettings ({ onClose }) {
       </section>
     </div>
   )
+
+  // The page-stage animation creates a transform containing block for fixed
+  // descendants. Render this dialog outside it so it always fills the viewport.
+  if (typeof document === 'undefined') return null
+  return createPortal(dialog, document.body)
 }
 
 async function requestJson (url, options = {}) {
