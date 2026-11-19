@@ -16,6 +16,7 @@ import ActionFeedback from '@/components/ActionFeedback'
 
 const INITIAL_FORM = {
   baseURL: '',
+  protocol: 'chat_completions',
   model: '',
   displayName: 'AI 助手',
   apiKey: ''
@@ -44,6 +45,7 @@ export default function AdminAISettings ({ onClose }) {
         setConfig(view)
         setForm({
           baseURL: view.baseURL || '',
+          protocol: view.protocol || 'chat_completions',
           model: view.model || '',
           displayName: view.displayName || 'AI 助手',
           apiKey: ''
@@ -88,6 +90,7 @@ export default function AdminAISettings ({ onClose }) {
       setConfig(view)
       setForm(current => ({
         baseURL: view.baseURL || '',
+        protocol: view.protocol || current.protocol || 'chat_completions',
         model: view.model || '',
         displayName: view.displayName || 'AI 助手',
         apiKey: ''
@@ -112,6 +115,7 @@ export default function AdminAISettings ({ onClose }) {
       setConfig(view)
       setForm({
         baseURL: view.baseURL || '',
+        protocol: view.protocol || 'chat_completions',
         model: view.model || '',
         displayName: view.displayName || 'AI 助手',
         apiKey: ''
@@ -136,7 +140,7 @@ export default function AdminAISettings ({ onClose }) {
           <div>
             <p className="ink-eyebrow">Server-side connection</p>
             <h2 id="admin-ai-settings-title">AI 接口</h2>
-            <p>支持 OpenAI-compatible Chat Completions 接口。保存后立即影响站内 AI 工作间。</p>
+            <p>支持 Chat Completions 与 Responses 协议，并自动附加 Codex User-Agent。保存后立即影响站内 AI 工作间。</p>
           </div>
           <button type="button" className="admin-ai-settings-close" onClick={onClose} aria-label="关闭 AI 接口设置">
             <X className="h-4 w-4" aria-hidden="true" />
@@ -188,6 +192,22 @@ export default function AdminAISettings ({ onClose }) {
 
               <form className="admin-ai-settings-form" onSubmit={saveSettings}>
                 <label className="admin-ai-settings-field">
+                  <span>接口协议</span>
+                  <select
+                    value={form.protocol}
+                    onChange={event => updateField('protocol', event.target.value)}
+                    disabled={busy}
+                  >
+                    <option value="chat_completions">Chat Completions（/chat/completions）</option>
+                    <option value="responses">Responses（/responses）</option>
+                  </select>
+                  <small>
+                    选择服务商实际提供的 API。系统会按协议自动拼接请求路径。
+                    {config?.userAgent ? ` 当前 User-Agent：${config.userAgent}` : ''}
+                  </small>
+                </label>
+
+                <label className="admin-ai-settings-field">
                   <span>接口 URL</span>
                   <input
                     ref={urlRef}
@@ -200,7 +220,7 @@ export default function AdminAISettings ({ onClose }) {
                     disabled={busy}
                     required
                   />
-                  <small>填写基础地址，不要把 /chat/completions 拼在末尾；系统会自动添加。</small>
+                  <small>填写基础地址，不要把 /chat/completions 或 /responses 拼在末尾。</small>
                 </label>
 
                 <div className="admin-ai-settings-row">

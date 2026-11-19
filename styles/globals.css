@@ -4391,7 +4391,8 @@ body {
   font-weight: 700;
 }
 
-.admin-ai-settings-field input {
+.admin-ai-settings-field input,
+.admin-ai-settings-field select {
   width: 100%;
   min-height: 2.6rem;
   min-width: 0;
@@ -4404,7 +4405,8 @@ body {
   font-size: 0.82rem;
 }
 
-.admin-ai-settings-field input:focus {
+.admin-ai-settings-field input:focus,
+.admin-ai-settings-field select:focus {
   border-color: var(--ink-accent);
   box-shadow: 0 0 0 2px var(--ink-accent-soft);
 }

@@ -19,6 +19,8 @@ const AI_ENV_KEYS = [
   'AI_BASE_URL',
   'AI_MODEL',
   'AI_DISPLAY_NAME',
+  'AI_API_PROTOCOL',
+  'AI_USER_AGENT',
   'AI_TIMEOUT_MS',
   'AI_MAX_OUTPUT_TOKENS',
   'AI_CONFIG_ENCRYPTION_KEY',
@@ -55,6 +57,10 @@ test('AI base URLs normalize OpenAI-compatible endpoints and reject unsafe forms
 
   assert.equal(
     normalizeAIBaseURL('https://api.example.com/v1/chat/completions'),
+    'https://api.example.com/v1'
+  )
+  assert.equal(
+    normalizeAIBaseURL('https://api.example.com/v1/responses'),
     'https://api.example.com/v1'
   )
   assert.equal(
@@ -149,6 +155,7 @@ test('environment configuration reports malformed values with safe fallbacks', t
     AI_BASE_URL: 'http://insecure.example.com/v1',
     AI_MODEL: 'bad  model',
     AI_DISPLAY_NAME: '   ',
+    AI_API_PROTOCOL: 'unsupported',
     AI_TIMEOUT_MS: '999999',
     AI_MAX_OUTPUT_TOKENS: '1'
   })
@@ -158,11 +165,29 @@ test('environment configuration reports malformed values with safe fallbacks', t
   assert.equal(config.baseURL, 'https://api.openai.com/v1')
   assert.equal(config.model, '')
   assert.equal(config.displayName, 'AI 助手')
+  assert.equal(config.protocol, 'chat_completions')
   assert.equal(config.timeoutMs, 180000)
   assert.equal(config.maxOutputTokens, 256)
   assert.match(config.warning, /AI_BASE_URL 无效/)
   assert.match(config.warning, /AI_MODEL 无效/)
   assert.match(config.warning, /AI_DISPLAY_NAME 无效/)
+  assert.match(config.warning, /AI_API_PROTOCOL 无效/)
+})
+
+test('environment configuration supports Responses protocol and a custom user agent', t => {
+  t.after(restoreOriginalEnv)
+  applyEnv({
+    AI_API_KEY: 'server-only-secret',
+    AI_BASE_URL: 'https://provider.example.com/v1',
+    AI_MODEL: 'provider-model',
+    AI_API_PROTOCOL: 'responses',
+    AI_USER_AGENT: 'codex-test/1.0'
+  })
+
+  const config = getAIEnvConfig()
+  assert.equal(config.protocol, 'responses')
+  assert.equal(config.userAgent, 'codex-test/1.0')
+  assert.equal(config.warning, '')
 })
 
 test('a new API key can overwrite unreadable saved AI configuration', async t => {
@@ -180,6 +205,7 @@ test('a new API key can overwrite unreadable saved AI configuration', async t =>
     baseURL: 'https://api.example.com/v1',
     model: 'example-model',
     displayName: '写作助手',
+    protocol: 'responses',
     apiKey: 'sk-new-secret-value'
   }, {
     readStoredConfig: async () => {
@@ -200,7 +226,9 @@ test('a new API key can overwrite unreadable saved AI configuration', async t =>
   assert.equal(result.source, 'admin')
   assert.equal(result.apiKeyConfigured, true)
   assert.equal(result.warning, '')
+  assert.equal(result.protocol, 'responses')
   assert.equal(JSON.parse(savedRecord).version, 1)
+  assert.equal(JSON.parse(savedRecord).protocol, 'responses')
   assert.equal(JSON.stringify(JSON.parse(savedRecord)).includes('sk-new-secret-value'), false)
 })
 
