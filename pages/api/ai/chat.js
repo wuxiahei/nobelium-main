@@ -1,5 +1,5 @@
 import { normalizeChatRequest } from '@/lib/ai/messages.mjs'
-import { aiServerConfig, publicAIConfig } from '@/lib/server/ai-config'
+import { getAIServerConfig } from '@/lib/server/ai-config.mjs'
 
 const rateLimitStore = globalThis.__elyAIRateLimitStore || new Map()
 globalThis.__elyAIRateLimitStore = rateLimitStore
@@ -12,7 +12,15 @@ export default async function handler (req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  if (!publicAIConfig.enabled) {
+  let aiServerConfig
+  try {
+    aiServerConfig = await getAIServerConfig()
+  } catch (error) {
+    console.error(`[ai] Configuration unavailable: ${error.message}`)
+    return res.status(503).json({ error: 'AI 服务配置暂时不可用，请联系管理员。' })
+  }
+
+  if (!aiServerConfig.apiKey || !aiServerConfig.model) {
     return res.status(503).json({ error: 'AI 服务尚未由管理员配置。' })
   }
 

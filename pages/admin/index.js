@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Head from 'next/head'
-import { AlertTriangle, CheckCircle2, Eye, FilePlus2, LogOut, Save, ShieldCheck, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Eye, FilePlus2, LogOut, Save, Settings2, ShieldCheck, XCircle } from 'lucide-react'
 import Container from '@/components/Container'
 import ActionFeedback from '@/components/ActionFeedback'
 import AdminDraftPreview from '@/components/AdminDraftPreview'
 import AdminMarkdownEditor from '@/components/AdminMarkdownEditor'
+import AdminAISettings from '@/components/AdminAISettings'
 import { appendDraftSnapshot, normalizeDraftSnapshots } from '@/lib/admin-draft-history.mjs'
 import { runContentPreflight } from '@/lib/content-preflight.mjs'
 import { getAdminPostKey, getAdminPostUrl } from '@/lib/admin-post-identity.mjs'
@@ -36,6 +37,7 @@ export default function AdminPage () {
   const [lastAutosavedAt, setLastAutosavedAt] = useState(null)
   const [recovery, setRecovery] = useState(null)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [aiSettingsOpen, setAISettingsOpen] = useState(false)
   const [conflict, setConflict] = useState(false)
   const savePostRef = useRef(null)
   const isNotion = currentPost?.source === 'notion'
@@ -401,6 +403,10 @@ export default function AdminPage () {
             {session?.authenticated && (
               <div className="admin-user-badge">
                 <span>{session.username}</span>
+                <button type="button" className="ink-command" onClick={() => setAISettingsOpen(true)}>
+                  <Settings2 className="h-4 w-4" aria-hidden="true" />
+                  AI 接口
+                </button>
                 <button type="button" className="ink-command" onClick={logout}>
                   <LogOut className="h-4 w-4" aria-hidden="true" />
                   退出
@@ -408,6 +414,10 @@ export default function AdminPage () {
               </div>
             )}
           </header>
+
+          {session?.authenticated && aiSettingsOpen && (
+            <AdminAISettings onClose={() => setAISettingsOpen(false)} />
+          )}
 
           {checkingSession && <StatusCard>正在检查管理员会话……</StatusCard>}
 

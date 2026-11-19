@@ -324,7 +324,7 @@ export default function AIWorkspace () {
         <button type="button" className="ink-command w-full" onClick={() => setSettings(defaultSettings)}>
           恢复默认设置
         </button>
-        <p className="ai-settings-footnote">管理员通过服务端环境变量配置模型与密钥。浏览器不会获得 API Key，也不会把会话写入服务端数据库。</p>
+        <p className="ai-settings-footnote">管理员可在写作后台的“AI 接口”中配置服务地址、模型和 Key。已保存的 Key 只在服务端解密读取，不会回传到浏览器；会话仍只保存在此浏览器。</p>
       </aside>
     </section>
   )

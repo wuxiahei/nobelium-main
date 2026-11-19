@@ -4222,3 +4222,310 @@ body {
   .feedback-spinner, .skeleton-avatar, .skeleton-line, .content-image-placeholder { animation: none; }
   .comment-item { transition: none; }
 }
+
+/* Admin AI provider settings */
+.admin-ai-settings-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(20 20 18 / 58%);
+  backdrop-filter: blur(5px);
+}
+
+.admin-ai-settings {
+  width: min(52rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  border-top: 3px solid var(--ink-main);
+  background: var(--ink-paper);
+  color: var(--ink-main);
+  box-shadow: 0 1.4rem 4rem rgb(0 0 0 / 24%);
+}
+
+.admin-ai-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 1.4rem 1.1rem;
+  border-bottom: 1px solid var(--ink-line-strong);
+  background: color-mix(in srgb, var(--ink-surface) 78%, transparent);
+}
+
+.admin-ai-settings-header h2 {
+  margin-top: 0.2rem;
+  font-family: 'Source Serif', ui-serif, Georgia, serif;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 580;
+  line-height: 1.05;
+}
+
+.admin-ai-settings-header p:last-child {
+  max-width: 38rem;
+  margin-top: 0.45rem;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
+.admin-ai-settings-close {
+  display: inline-grid;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--ink-line);
+  color: var(--ink-muted);
+  background: var(--ink-paper);
+}
+
+.admin-ai-settings-close:hover {
+  border-color: var(--ink-accent);
+  color: var(--ink-accent);
+}
+
+.admin-ai-settings-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 12rem;
+  justify-content: center;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+.admin-ai-settings-content {
+  padding: 1.2rem 1.4rem 1.4rem;
+}
+
+.admin-ai-settings-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ink-line);
+  background: color-mix(in srgb, var(--ink-surface) 68%, transparent);
+}
+
+.admin-ai-settings-status > div {
+  min-width: 0;
+}
+
+.admin-ai-settings-status span[class^='is-'] {
+  display: inline-flex;
+  padding: 0.18rem 0.4rem;
+  color: var(--ink-accent);
+  background: var(--ink-accent-soft);
+  font-size: 0.64rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.admin-ai-settings-status span.is-env {
+  color: var(--ink-muted);
+  background: var(--ink-line);
+}
+
+.admin-ai-settings-status p {
+  margin-top: 0.45rem;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.admin-ai-key-state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.admin-ai-key-state.is-configured {
+  color: var(--ink-accent);
+}
+
+.admin-ai-settings-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid var(--ink-seal);
+  color: var(--ink-seal);
+  background: var(--ink-seal-soft);
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.admin-ai-settings-notice svg {
+  flex: none;
+  margin-top: 0.12rem;
+}
+
+.admin-ai-settings-content > .action-feedback {
+  margin-top: 0.8rem;
+}
+
+.admin-ai-settings-form {
+  margin-top: 1rem;
+}
+
+.admin-ai-settings-field {
+  display: block;
+  min-width: 0;
+  margin-top: 0.9rem;
+}
+
+.admin-ai-settings-field > span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.admin-ai-settings-field input {
+  width: 100%;
+  min-height: 2.6rem;
+  min-width: 0;
+  border: 1px solid var(--ink-line);
+  border-radius: 0;
+  padding: 0.58rem 0.68rem;
+  outline: 0;
+  color: var(--ink-main);
+  background: var(--ink-surface);
+  font-size: 0.82rem;
+}
+
+.admin-ai-settings-field input:focus {
+  border-color: var(--ink-accent);
+  box-shadow: 0 0 0 2px var(--ink-accent-soft);
+}
+
+.admin-ai-settings-field input::placeholder {
+  color: color-mix(in srgb, var(--ink-muted) 66%, transparent);
+}
+
+.admin-ai-settings-field small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  line-height: 1.55;
+}
+
+.admin-ai-settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.55fr);
+  gap: 0.8rem;
+}
+
+.admin-ai-settings-secret {
+  position: relative;
+}
+
+.admin-ai-settings-secret input {
+  padding-right: 5.1rem;
+}
+
+.admin-ai-settings-secret button {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.45rem;
+  color: var(--ink-muted);
+  font-size: 0.67rem;
+  font-weight: 650;
+  transform: translateY(-50%);
+}
+
+.admin-ai-settings-secret button:hover {
+  color: var(--ink-accent);
+}
+
+.admin-ai-settings-security {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--ink-line);
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.admin-ai-settings-security svg {
+  flex: none;
+  margin-top: 0.08rem;
+  color: var(--ink-accent);
+}
+
+.admin-ai-settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ink-line);
+}
+
+.admin-ai-settings-actions > div {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.admin-ai-settings-actions .ink-command {
+  min-height: 2.35rem;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .admin-ai-settings-backdrop {
+    align-items: end;
+    padding: 0.5rem;
+  }
+
+  .admin-ai-settings {
+    max-height: calc(100vh - 1rem);
+  }
+
+  .admin-ai-settings-header,
+  .admin-ai-settings-content {
+    padding-inline: 1rem;
+  }
+
+  .admin-ai-settings-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-ai-settings-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .admin-ai-settings-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .admin-ai-settings-actions > div,
+  .admin-ai-settings-actions > .ink-command {
+    width: 100%;
+  }
+
+  .admin-ai-settings-actions > div .ink-command {
+    flex: 1;
+  }
+}
