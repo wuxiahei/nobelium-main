@@ -4,10 +4,16 @@ import { useConfig } from '@/lib/config'
 import Head from 'next/head'
 import PropTypes from 'prop-types'
 import cn from 'classnames'
-import ReadingProgress from '@/components/ReadingProgress'
 // import BlogPost from './BlogPost'
 
-const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) => {
+const Container = ({
+  children,
+  layout,
+  fullWidth,
+  headerMeta,
+  robots = 'follow, index',
+  ...customMeta
+}) => {
   const BLOG = useConfig()
 
   const url = BLOG.path.length ? `${BLOG.link}/${BLOG.path}` : BLOG.link
@@ -26,7 +32,7 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
       <Head>
         <title>{meta.title}</title>
         {/* <meta content={BLOG.darkBackground} name="theme-color" /> */}
-        <meta name="robots" content="follow, index" />
+        <meta name="robots" content={robots} />
         <meta charSet="UTF-8" />
         {BLOG.seo.googleSiteVerification && (
           <meta
@@ -68,10 +74,13 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
         )}
       </Head>
       <div
-        className={`wrapper ${BLOG.font === 'serif' ? 'font-serif' : 'font-sans'
-          }`}
+        className={cn(
+          'wrapper',
+          BLOG.font === 'serif' ? 'font-serif' : 'font-sans',
+          layout === 'search' && 'search-layout',
+          layout === 'home' && 'home-layout'
+        )}
       >
-        {layout === 'blog' && <ReadingProgress />}
         <Header
           navBarTitle={null}
           headerMeta={headerMeta}
@@ -79,7 +88,8 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
         />
         <main className={cn(
           'page-stage flex-grow transition-all',
-          layout !== 'blog' && ['self-center px-4 sm:px-6', fullWidth ? 'md:px-24' : 'w-full max-w-3xl']
+          fullWidth ? null : 'site-shell',
+          layout !== 'blog' && !fullWidth && 'px-4 sm:px-6 lg:px-8'
         )}>
           {children}
         </main>
@@ -91,7 +101,8 @@ const Container = ({ children, layout, fullWidth, headerMeta, ...customMeta }) =
 
 Container.propTypes = {
   children: PropTypes.node,
-  headerMeta: PropTypes.string
+  headerMeta: PropTypes.string,
+  robots: PropTypes.string
 }
 
 export default Container

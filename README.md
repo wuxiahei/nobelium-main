@@ -7,8 +7,11 @@ This project uses Notion as the writing backend while adding a more personal vis
 ## Features
 
 - Notion database driven posts and pages
+- Optional GitHub Issue articles written in Markdown
+- Admin-only `/admin` editor with a Markdown toolbar, split preview, fold blocks, and image placement
 - About page rendered as a resume-style profile when `slug` is `about`
 - Search and tag filtering
+- Guest comments backed by GitHub Issues without a GitHub login
 - Article reading progress and active table of contents
 - RSS feed at `/feed`
 - Syntax highlighting optimized to load common code languages on demand
@@ -57,6 +60,53 @@ For the About page, create a row with:
 
 The page body can use H2 sections such as `Profile`, `Skills`, `Experience`, `Projects`, and `Contact`.
 
+## 在后台修改 Notion 文章
+
+管理员登录 /admin 后，可以在左侧文章档案中打开 Notion 或 GitHub 文章。修改会保存回原来的页面；Notion 客户端仍可继续编辑，无需额外数据库。
+
+- 沿用服务端的 `NOTION_API_KEY` 和 `NOTION_DATABASE_ID`。集成需要 Read content、Update content 权限，并连接博客数据库。若一个数据库有多个数据源，设置 `NOTION_DATA_SOURCE_ID` 指定博客数据源。
+- 这里只编辑已有 Notion 文章；新建入口仍创建 GitHub 文章。Notion 数据库中的行需使用 `type=Post` 或 `type=Page`。
+- 可修改标题、正文，以及数据库中可写的 slug、摘要、标签、日期。不存在或为公式等只读类型的字段会禁用。
+- “保存到 Notion”和 Ctrl / Cmd + S 保留当前发布状态。状态属性含有 Draft、Published 两个选项时，可额外切换草稿与发布。
+- 普通 Markdown、图片和 Notion 折叠块可在后台修改。分栏等专用语法保留原文，预览以 Notion 为准；图片环绕与宽度请在 Notion 中调整。
+- 正文包含子页面、同步块、未能读取的内容，或超过 60,000 字符时，后台只修改元数据，正文在 Notion 中编辑，避免丢失内容。
+- 保存前检查线上版本。冲突或未能确认完整保存时，保留本机草稿并提示重新载入；Notion 的正文和属性写入不是原子事务，出现此提示后请核对线上内容再重试。
+- 保存后自动刷新文章、列表和标签缓存；部分缓存刷新失败会明确提示。
+
+后台写入使用官方 Markdown API（Notion-Version 2026-03-11、markdown_version v2），不改变站点现有读取接口的版本设置。令牌只用于服务端请求。
+
+## 在后台配置 AI 接口
+
+登录 `/admin` 后，点击右上角 **AI 接口**，可以保存最多 10 套服务商配置，并一键切换当前使用的连接，不需要为了更换模型重新部署。每套配置分别保存接口协议、接口 URL、模型名称、内部配置名称、对外显示名称和 API Key；切换时无需重新填写 Key。
+
+- 接口协议支持 `Chat Completions` 与 `Responses`。
+- 接口 URL 填写基础地址，例如 `https://api.openai.com/v1`；不要附加 `/chat/completions` 或 `/responses`，服务端会按所选协议自动拼接。
+- 服务端请求会自动发送 Codex User-Agent。如需适配专用网关，可用 `AI_USER_AGENT` 覆盖默认值。
+- 模型名称、接口 URL、档案标识和 API Key 只对管理员可见；公开配置接口与对话响应不会返回模型名称。访客只会看到单独的“对外显示名称”。
+- AI 配置只通过 HTTPS 提交到服务端。保存后使用 AES-256-GCM 加密整份载荷（接口 URL、模型、协议、档案名、显示名和 API Key），再写入与站内图片相同的 Vercel Blob 存储。公开记录中只有密文；管理员接口只返回可编辑的档案信息和“是否已配置”，不会把 Key 回传到浏览器。
+- 编辑已有配置时，留空 API Key 会沿用该档案已保存的 Key；新建配置必须填写 Key。要清除后台保存的全部档案并恢复环境变量配置，可点击 **恢复环境变量配置**。
+- 后台保存需要 `BLOB_READ_WRITE_TOKEN`，以及至少 32 字符的 `ADMIN_SESSION_SECRET`。建议单独设置 `AI_CONFIG_ENCRYPTION_KEY`，避免轮换管理员会话密钥后导致已保存的 AI 配置无法解密。
+- 尚未保存后台配置时，继续读取 `AI_API_KEY`、`AI_BASE_URL`、`AI_API_PROTOCOL`、`AI_MODEL` 和 `AI_DISPLAY_NAME` 环境变量。后台保存配置后优先使用当前启用的档案。
+- `AI_TIMEOUT_MS` 和 `AI_MAX_OUTPUT_TOKENS` 仍由环境变量控制。
+- AI 对话支持图片和 TXT、Markdown、CSV、JSON、日志、YAML 等文本附件；回答使用 SSE 流式显示，并支持停止生成。
+- 对话默认开启“检索站内博客”。服务端会对已发布的 Notion 和 GitHub Issue 文章做标题、标签、摘要与正文检索，将最相关的资料交给模型，并在回答下方列出文章标题、类型与原文链接。文章正文按未受信任参考资料处理，不能改变系统规则。
+
+AI provider variables:
+
+| Variable | Description |
+| --- | --- |
+| `AI_API_KEY` | Initial server-only API key and fallback when no admin AI settings are saved |
+| `AI_BASE_URL` | Initial OpenAI-compatible base URL |
+| `AI_API_PROTOCOL` | Initial protocol: `chat_completions` (default) or `responses` |
+| `AI_MODEL` | Initial model name |
+| `AI_DISPLAY_NAME` | Name shown in the AI workspace |
+| `AI_USER_AGENT` | Optional User-Agent override; defaults to a Codex CLI user agent |
+| `AI_CONFIG_ENCRYPTION_KEY` | Optional dedicated key of at least 32 characters for encrypting saved AI settings |
+| `AI_TIMEOUT_MS` | Provider request timeout in milliseconds |
+| `AI_MAX_OUTPUT_TOKENS` | Maximum output tokens sent to the provider |
+
+If `AI_CONFIG_ENCRYPTION_KEY` is empty, the server uses `ADMIN_SESSION_SECRET`. Rotating either key can make previously saved AI settings unreadable; open the AI settings panel and enter the configuration and API key again.
+
 ## Environment Variables
 
 Create a `.env` file based on `.env.example`:
@@ -71,6 +121,27 @@ Required variables:
 | --- | --- |
 | `NOTION_API_KEY` | Notion integration token (recommended) |
 | `NOTION_DATABASE_ID` | Your Notion database ID |
+| `REVALIDATE_SECRET` | Protects `POST /api/revalidate` from unauthorized cache refreshes |
+| `COMMENTS_GITHUB_REPO` | Repository that stores guest comments as GitHub Issues |
+| `COMMENTS_GITHUB_TOKEN` | Server-only GitHub token with Issues read/write access |
+
+GitHub Issue article and admin variables:
+
+| Variable | Description |
+| --- | --- |
+| `CONTENT_GITHUB_REPO` | Repository whose Issues store articles, normally `wuxiahei/nobelium-main` |
+| `CONTENT_GITHUB_TOKEN` | Server-only fine-grained token with Issues read/write access |
+| `CONTENT_GITHUB_LABEL` | Issue label that marks a published article; default `nobelium-post` |
+| `CONTENT_GITHUB_DRAFT_LABEL` | Label used for drafts; default `nobelium-draft` |
+| `CONTENT_GITHUB_TAG_PREFIX` | Optional article-tag label prefix; default `tag:` |
+| `ADMIN_USERNAME` | Administrator login name |
+| `ADMIN_PASSWORD_HASH` | Recommended one-way scrypt password hash generated by `pnpm run admin:hash-password -- "your-password"` |
+| `ADMIN_PASSWORD` | Legacy plaintext fallback; leave empty when using the hash |
+| `ADMIN_SESSION_SECRET` | Random secret of at least 32 characters used to sign admin sessions |
+| `ADMIN_SESSION_TTL_SECONDS` | Session lifetime, default 12 hours and capped at 7 days |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token used by `/admin` for local image uploads and encrypted AI settings |
+
+No second GitHub repository is required. `CONTENT_GITHUB_REPO` and `COMMENTS_GITHUB_REPO` can both be `wuxiahei/nobelium-main`, and the two token variables can contain the same fine-grained token. Article Issues use `nobelium-post`/`nobelium-draft` labels; ordinary comment Issues do not use those labels, so the two features stay separate.
 
 Legacy variables (only if NOTION_API_KEY is not configured):
 
@@ -92,6 +163,152 @@ pnpm dev
 ```bash
 pnpm build
 ```
+
+## On-demand Revalidation
+
+Pages use incremental static regeneration (ISR) as a fallback. To make a Notion change visible immediately, call the protected revalidation endpoint after publishing.
+
+1. Add `REVALIDATE_SECRET` to the Vercel project's environment variables.
+2. Redeploy so the new environment variable is available.
+3. Send a `POST` request with the same value as a bearer token.
+
+Refresh the whole site from Notion data:
+
+```bash
+curl --fail-with-body -X POST "https://your-site.example/api/revalidate" \
+  -H "Authorization: Bearer $REVALIDATE_SECRET" \
+  -H "Content-Type: application/json" \
+  --data '{}'
+```
+
+Refresh only selected internal paths:
+
+```bash
+curl --fail-with-body -X POST "https://your-site.example/api/revalidate" \
+  -H "Authorization: Bearer $REVALIDATE_SECRET" \
+  -H "Content-Type: application/json" \
+  --data '{"paths":["/","/search","/my-post"]}'
+```
+
+The endpoint accepts only same-site paths. It rejects external URLs, protocol-relative URLs, query strings, and fragments. A full refresh collects the home page, search page, pagination, article/page paths, and tag paths from Notion. The response lists every path that failed instead of reporting a partial refresh as successful.
+
+`REVALIDATE_SECRET` is required so an arbitrary visitor cannot repeatedly force expensive cache regeneration. It does not authenticate the blog itself and it is never sent to the browser. Changes saved from `/admin` trigger revalidation automatically; this endpoint remains useful for changes made directly in Notion.
+
+The existing `revalidate: 300` setting remains in place as a safety net when the endpoint is not called.
+
+## Admin Writing and GitHub Issue Articles
+
+Notion remains fully supported. GitHub Issues are an optional second content source, so existing Notion posts do not need to be migrated.
+
+### Configure the administrator
+
+1. Create a fine-grained GitHub token limited to the site repository.
+2. Grant only `Issues: Read and write` and `Metadata: Read-only`.
+3. Add these environment variables in Vercel and redeploy:
+   - `CONTENT_GITHUB_REPO=wuxiahei/nobelium-main`
+   - `CONTENT_GITHUB_TOKEN=<server-only token>`
+   - `COMMENTS_GITHUB_REPO=wuxiahei/nobelium-main`
+   - `COMMENTS_GITHUB_TOKEN=<the same token is fine>`
+   - `ADMIN_USERNAME=<your admin name>`
+   - `ADMIN_PASSWORD_HASH=<generated hash>`
+   - `ADMIN_SESSION_SECRET=<at least 32 random characters>`
+   - `BLOB_READ_WRITE_TOKEN=<token created when the Vercel Blob store is connected to the project>`
+4. Open `https://your-site.example/admin` directly. The route is intentionally not linked from the public navigation.
+
+Generate the session secret with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+You can still type an ordinary, easy-to-remember password in the `/admin` login form. To avoid storing that password as plaintext in Vercel, generate an scrypt hash once:
+
+```bash
+pnpm run admin:hash-password -- "your-password"
+```
+
+Put the output in `ADMIN_PASSWORD_HASH` and leave `ADMIN_PASSWORD` empty. If both are set, the hash is used. On login, the browser sends the entered password to the Vercel server over HTTPS, and the server verifies it against the hash. Hashing is one-way, so the original password is never stored in or recovered from the environment variable. Use a password that is long enough to resist online guessing even though the login endpoint is rate-limited.
+
+The login API issues a signed HttpOnly, SameSite session cookie. Only authenticated administrators can call the article list, create, update, and publish APIs. There is no public registration. Session lifetime defaults to 12 hours and cannot exceed 7 days.
+
+### Write an article
+
+1. Sign in at `/admin`.
+2. Enter title, date, optional slug/summary/tags, and Markdown content.
+3. Use **保存为草稿** for an unpublished draft, or **发布文章** to make it public.
+4. Drafts are stored as open Issues with the `nobelium-draft` label and are hidden from the public site.
+5. Publishing removes the draft label and automatically revalidates the home page, article, tag, search, and pagination caches.
+
+You can also create or edit an Issue directly in GitHub. An open Issue becomes an article when it has the `nobelium-post` label. Optional front matter can set metadata:
+
+```markdown
+---
+slug: my-post
+summary: A short article summary
+date: 2026-11-02
+tags:
+  - Next.js
+  - Vercel
+---
+
+Article content in Markdown.
+```
+
+If `slug` is omitted, the site derives it from the title and Issue number. If `summary` is omitted, it extracts the first text paragraph. Keep published article Issues open; closing an Issue removes it from the public site.
+
+GitHub article pages support GitHub Flavored Markdown, tables, fenced code blocks, images, links, and KaTeX math formulas.
+
+### Comments and reading continuity
+
+Guest comments support initial avatars, replies with a link to the original message, a live character count, and per-article unsent drafts in browser storage. Failed submissions retain the text; successful submissions clear the draft and highlight the new comment. Loading failures can be retried without refreshing the article.
+
+Comments posted on the website while signed in as an administrator receive a verified **博主** badge. The server signs the comment using the existing `ADMIN_SESSION_SECRET`; browser-supplied identity flags are ignored. Rotating this secret removes verification from older badges without deleting their comments. This feature needs no new environment variables or database.
+
+Articles remember partial reading positions in the current browser for up to 90 days and offer **继续阅读** on reopening. Progress follows the article body, excluding comments and the footer. Positions near the beginning or end are cleared, and links to a specific heading take precedence over the resume prompt. Reading history and unsent comments are local to that browser and do not sync between devices.
+
+Article images show loading placeholders and an individual retry action on failure. Publishing, image uploads, copying, and comment submission use consistent status feedback.
+
+### Markdown writing helpers
+
+The `/admin` editor keeps the Markdown source visible and adds quick controls for headings, lists, quotes, code, tables, math, dividers, and images. Use **编辑 / 分屏 / 预览** to switch layouts. The toolbar inserts Markdown at the cursor (or at the end when previewing).
+
+Use **专注写作** to hide the archive, metadata, outline, and checks while retaining the title, body, and save controls; press Escape to leave focus mode. Type `/` at the beginning of an empty line to filter insertion commands in Chinese or English, then use arrow keys and Enter or click a command. Slash commands stay inactive inside fenced code blocks. Selecting text opens quick bold, italic, and link controls.
+
+When a draft changes, the editor automatically stores a local browser backup after 1.5 seconds. After a reload it offers to restore that backup; saving to GitHub clears it. The heading outline updates while typing and jumps directly to the selected heading. Local images can be selected, pasted, or dragged into the editor; they are compressed in the browser and uploaded to Vercel Blob. Saved GitHub drafts can be opened with **预览已保存草稿** without exposing them publicly.
+
+Insert a collapsible block with the toolbar or write:
+
+```markdown
+> [!fold] Click to expand
+>
+> Folded content goes here.
+```
+
+Insert a positioned image with the image panel. Its Markdown representation uses the image title as layout metadata:
+
+```markdown
+![description](https://example.com/image.jpg "right 40%")
+```
+
+Supported positions are `left`, `right`, `center`, and `full`; supported widths are percentages. Left/right images wrap text on wide screens, and all layouts become full-width on mobile.
+
+## Guest Comments
+
+The default comment provider stores guest comments as GitHub Issues, so no separate database is required. Visitors do not need a GitHub account: the Vercel API uses a server-side token to write their nickname and comment to GitHub Issues on their behalf.
+
+1. Reuse the site repository `wuxiahei/nobelium-main`, or create a separate repository with Issues enabled if you prefer.
+2. Create a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new) limited to that repository, or reuse the content token when using the same repository.
+3. Grant the token `Issues: Read and write` and `Metadata: Read-only`. Do not grant repository contents write access.
+4. Add these variables in Vercel under Project Settings → Environment Variables:
+   - `COMMENTS_GITHUB_REPO=wuxiahei/nobelium-main`
+   - `COMMENTS_GITHUB_TOKEN=<the fine-grained token>`
+5. Redeploy the project, open an article, and submit a test comment.
+
+Each article creates one issue titled `[Blog comments] <stable id>`. Each guest comment is stored as a comment on that issue. To moderate a comment, delete it in GitHub; it will disappear from the blog immediately on the next request. Deleting the issue removes every comment for that article.
+
+`COMMENTS_GITHUB_REPO` is public configuration. `COMMENTS_GITHUB_TOKEN` is read only inside the server-side API and is never sent to the browser. The site also applies a best-effort in-memory rate limit and a hidden spam honeypot; Vercel serverless instances may reset this limit, so use GitHub's issue controls if abuse occurs.
+
+To switch back to another provider, change `comment.provider` in `blog.config.js`. Supported values are `github`, `gitalk`, and `utterances`.
 
 ## Configuration
 

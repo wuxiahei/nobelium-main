@@ -2,8 +2,8 @@ import 'gitalk/dist/gitalk.css'
 import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
 import cn from 'classnames'
-import { fetchCusdisLang } from '@/lib/cusdisLang'
 import { useConfig } from '@/lib/config'
+import { useLocale } from '@/lib/locale'
 import LazyRender from '@/components/LazyRender'
 
 const GitalkComponent = dynamic(
@@ -18,9 +18,9 @@ const UtterancesComponent = dynamic(
   },
   { ssr: false }
 )
-const CusdisComponent = dynamic(
+const GuestCommentsComponent = dynamic(
   () => {
-    return import('react-cusdis').then(m => m.ReactCusdis)
+    return import('@/components/GuestComments')
   },
   { ssr: false }
 )
@@ -28,22 +28,35 @@ const CusdisComponent = dynamic(
 const Comments = ({ frontMatter }) => {
   const router = useRouter()
   const BLOG = useConfig()
+  const locale = useLocale()
 
+  const provider = BLOG?.comment?.provider
+  const githubConfigured = provider === 'github' && Boolean(BLOG?.comment?.githubConfig?.configured)
   const fullWidth = frontMatter.fullWidth ?? false
+
+  if (!provider) return null
 
   return (
     <div
       className={cn(
         'my-5 px-4 font-medium text-gray-500 dark:text-gray-400',
-        fullWidth ? 'md:px-24' : 'mx-auto max-w-3xl sm:px-6',
+        fullWidth ? 'md:px-24' : 'mx-auto max-w-3xl sm:px-6'
       )}
     >
+      <h2 className={cn('text-lg font-semibold text-[var(--ink-main)]', githubConfigured ? 'mb-2' : 'mb-4')}>
+        {locale.POST.COMMENTS}
+      </h2>
+      {githubConfigured && (
+        <p className="mb-4 text-sm font-normal leading-6 text-[var(--ink-muted)]">
+          {locale.POST.COMMENTS_GUEST_HINT}
+        </p>
+      )}
       <LazyRender
         minHeight={160}
-        placeholder={<div className="rounded-xl border border-gray-200/80 bg-white/50 px-4 py-6 text-sm dark:border-gray-800 dark:bg-white/5">Comments load when you scroll here.</div>}
+        placeholder={<div className="rounded-xl border border-gray-200/80 bg-white/50 px-4 py-6 text-sm dark:border-gray-800 dark:bg-white/5">{locale.POST.COMMENTS_LOADING}</div>}
       >
         <>
-          {BLOG.comment && BLOG.comment.provider === 'gitalk' && (
+          {provider === 'gitalk' && (
             <GitalkComponent
               options={{
                 id: frontMatter.id,
@@ -57,21 +70,21 @@ const Comments = ({ frontMatter }) => {
               }}
             />
           )}
-          {BLOG.comment && BLOG.comment.provider === 'utterances' && (
+          {provider === 'utterances' && (
             <UtterancesComponent issueTerm={frontMatter.id} />
           )}
-          {BLOG.comment && BLOG.comment.provider === 'cusdis' && (
-            <CusdisComponent
-              lang={fetchCusdisLang(BLOG.lang)}
-              attrs={{
-                host: BLOG.comment.cusdisConfig.host,
-                appId: BLOG.comment.cusdisConfig.appId,
-                pageId: frontMatter.id,
-                pageTitle: frontMatter.title,
-                pageUrl: BLOG.link + router.asPath,
-                theme: BLOG.appearance
-              }}
-            />
+          {provider === 'github' && (
+            githubConfigured ? (
+              <GuestCommentsComponent
+                pageId={frontMatter.id}
+                pageTitle={frontMatter.title}
+                pageUrl={BLOG.link + router.asPath}
+              />
+            ) : (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-normal leading-6 text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200" role="status">
+                {locale.POST.COMMENTS_UNAVAILABLE}
+              </div>
+            )
           )}
         </>
       </LazyRender>

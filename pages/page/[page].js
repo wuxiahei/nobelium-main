@@ -1,22 +1,32 @@
-import { config } from '@/lib/server/config'
-
 import Container from '@/components/Container'
 import BlogPost from '@/components/BlogPost'
 import Pagination from '@/components/Pagination'
 import { getAllPosts } from '@/lib/notion'
+import { config } from '@/lib/server/config'
+import { useConfig } from '@/lib/config'
+import { getPostSortLabel } from '@/lib/post-order.mjs'
 
 const Page = ({ postsToShow, page, showNext }) => {
+  const { sortBy } = useConfig()
   return (
-    <Container>
-      {postsToShow &&
-        postsToShow.map(post => <BlogPost key={post.id} post={post} />)}
+    <Container headerMeta={`文章档案 · 第 ${page} 页`}>
+      <section className="article-index" aria-labelledby="archive-page-title">
+        <header className="article-index-header">
+          <div>
+            <p className="ink-eyebrow">Archive / Page {String(page).padStart(2, '0')}</p>
+            <h2 id="archive-page-title">往期札记</h2>
+          </div>
+          <p>{getPostSortLabel(sortBy)}</p>
+        </header>
+        {postsToShow && postsToShow.map(post => <BlogPost key={post.id} post={post} />)}
+      </section>
       <Pagination page={page} showNext={showNext} />
     </Container>
   )
 }
 
 export async function getStaticProps (context) {
-  const { page } = context.params // Get Current Page No.
+  const { page } = context.params
   const posts = (await getAllPosts({ includePages: false })).filter(isHomePost)
   const postsToShow = posts.slice(
     config.postsPerPage * (page - 1),
@@ -26,7 +36,7 @@ export async function getStaticProps (context) {
   const showNext = page * config.postsPerPage < totalPosts
   return {
     props: {
-      page, // Current Page
+      page,
       postsToShow,
       showNext
     },
@@ -39,7 +49,6 @@ export async function getStaticPaths () {
   const totalPosts = posts.length
   const totalPages = Math.ceil(totalPosts / config.postsPerPage)
   return {
-    // remove first page, we 're not gonna handle that.
     paths: Array.from({ length: totalPages - 1 }, (_, i) => ({
       params: { page: '' + (i + 2) }
     })),

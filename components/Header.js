@@ -97,8 +97,8 @@ export default function Header ({ navBarTitle, headerMeta, fullWidth }) {
     <>
       <div className="observer-element h-4 md:h-12" ref={sentinelRef}></div>
       <div
-        className={`sticky-nav group m-auto mb-4 flex h-16 w-full flex-row items-center justify-between bg-day/75 py-4 dark:bg-night/75 md:mb-12 ${
-          !fullWidth ? 'max-w-3xl px-4 sm:px-6' : 'px-4 md:px-24'
+        className={`sticky-nav group mb-4 flex h-16 w-full flex-row items-center justify-between bg-day/75 py-4 dark:bg-night/75 md:mb-12 ${
+          !fullWidth ? 'site-shell px-4 sm:px-6 lg:px-8' : 'px-4 md:px-24'
         }`}
         id="sticky-nav"
         ref={navRef}
@@ -112,7 +112,6 @@ export default function Header ({ navBarTitle, headerMeta, fullWidth }) {
             className="ely-brand ink-focus transition hover:opacity-90"
           >
             <span className="ely-brand-mark" aria-hidden="true">
-              <span className="ely-brand-kicker">墨间札记</span>
               <span className="ely-brand-name">Ely</span>
               {headerMeta && <span className="ely-brand-meta">{headerMeta}</span>}
             </span>
