@@ -340,7 +340,7 @@ export default function AdminAISettings ({ onClose }) {
                     </div>
                     )}
                 {config?.maxProfiles && (
-                  <p className="admin-ai-profiles-limit">已保存 {config.profiles?.length || 0} / {config.maxProfiles} 套。Key 密文保存在服务端，浏览器无法读取。</p>
+                  <p className="admin-ai-profiles-limit">已保存 {config.profiles?.length || 0} / {config.maxProfiles} 套。整份配置以密文保存在服务端，浏览器无法读取。</p>
                 )}
               </section>
 
@@ -448,7 +448,7 @@ export default function AdminAISettings ({ onClose }) {
                       {showKey ? '隐藏' : '显示'}
                     </button>
                   </div>
-                  <small>每套配置独立保存 Key。Key 只会提交到服务端并加密，已保存的 Key 不会回传到浏览器。</small>
+                  <small>每套配置独立保存。接口地址、模型、档案名、显示名、协议与 Key 会作为整份配置加密，已保存的 Key 不会回传到浏览器。</small>
                 </label>
 
                 <label className="admin-ai-activate-option">

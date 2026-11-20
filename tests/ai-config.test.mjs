@@ -233,10 +233,60 @@ test('a new API key can overwrite unreadable saved AI configuration', async t =>
   assert.equal(result.warning, '')
   assert.equal(result.protocol, 'responses')
   assert.match(result.savedProfileId, /^[a-zA-Z0-9_-]{1,80}$/)
-  assert.equal(JSON.parse(savedRecord).version, 2)
-  assert.equal(JSON.parse(savedRecord).profiles.length, 1)
-  assert.equal(JSON.parse(savedRecord).profiles[0].protocol, 'responses')
-  assert.equal(JSON.stringify(JSON.parse(savedRecord)).includes('sk-new-secret-value'), false)
+  const stored = JSON.parse(savedRecord)
+  assert.equal(stored.version, 3)
+  assert.equal(Object.hasOwn(stored, 'profiles'), false)
+  assert.equal(Object.hasOwn(stored, 'activeProfileId'), false)
+  assert.equal(typeof stored.payload?.data, 'string')
+  assert.equal(JSON.stringify(stored).includes('sk-new-secret-value'), false)
+
+  const payload = decryptStoredPayload(stored, 's'.repeat(40))
+  assert.equal(payload.profiles.length, 1)
+  assert.equal(payload.profiles[0].protocol, 'responses')
+  assert.equal(payload.profiles[0].apiKey.data.length > 0, true)
+})
+
+test('encrypted AI configuration rejects wrong keys and damaged payloads', async t => {
+  t.after(restoreOriginalEnv)
+  applyEnv({
+    NODE_ENV: 'production',
+    BLOB_READ_WRITE_TOKEN: 'blob-test-token',
+    ADMIN_SESSION_SECRET: 's'.repeat(40)
+  })
+
+  const wrongSecret = 'w'.repeat(40)
+  const payload = {
+    activeProfileId: 'profile-1',
+    profiles: [{
+      id: 'profile-1',
+      profileName: '内部线路',
+      baseURL: 'https://provider.example.com/v1',
+      model: 'provider-model',
+      displayName: 'AI 助手',
+      protocol: 'chat_completions',
+      apiKey: encryptSecret('sk-private-key', 's'.repeat(40)),
+      updatedAt: '2026-01-01T00:00:00.000Z'
+    }],
+    updatedAt: '2026-01-01T00:00:00.000Z'
+  }
+  const wrongKeyStorage = createMemoryStorage({
+    version: 3,
+    payload: encryptSecret(JSON.stringify(payload), wrongSecret)
+  })
+
+  await assert.rejects(
+    activateAdminAIProfile('profile-1', wrongKeyStorage.options),
+    error => error instanceof AIConfigurationError && error.status === 503 && /无法解密/.test(error.message)
+  )
+
+  const damagedStorage = createMemoryStorage({
+    version: 3,
+    payload: encryptSecret('{not-valid-json', 's'.repeat(40))
+  })
+  await assert.rejects(
+    activateAdminAIProfile('profile-1', damagedStorage.options),
+    error => error instanceof AIConfigurationError && /载荷格式损坏/.test(error.message)
+  )
 })
 
 test('saving without a new key refuses silent fallback when the old key is unreadable', async t => {
@@ -306,11 +356,20 @@ test('administrators can save, activate and delete multiple AI profiles without 
   assert.equal(backupView.profiles.find(profile => profile.id === backupId).isActive, false)
 
   const stored = storage.getRecord()
-  assert.equal(stored.version, 2)
-  assert.equal(stored.profiles.length, 2)
+  assert.equal(stored.version, 3)
+  assert.equal(Object.hasOwn(stored, 'profiles'), false)
+  assert.equal(Object.hasOwn(stored, 'activeProfileId'), false)
+  assert.equal(typeof stored.payload?.data, 'string')
   assert.equal(JSON.stringify(stored).includes('sk-primary-secret'), false)
   assert.equal(JSON.stringify(stored).includes('sk-backup-secret'), false)
-  assert.ok(stored.profiles.every(profile => profile.apiKey?.data))
+  assert.equal(JSON.stringify(stored).includes('primary.example.com'), false)
+  assert.equal(JSON.stringify(stored).includes('primary-model'), false)
+  assert.equal(JSON.stringify(stored).includes('主力线路'), false)
+  assert.equal(JSON.stringify(stored).includes('写作助手'), false)
+
+  const payload = decryptStoredPayload(stored, 's'.repeat(40))
+  assert.equal(payload.profiles.length, 2)
+  assert.ok(payload.profiles.every(profile => profile.apiKey?.data))
 
   const activatedView = await activateAdminAIProfile(backupId, storage.options)
   assert.equal(activatedView.activeProfileId, backupId)
@@ -366,10 +425,16 @@ test('legacy v1 settings are migrated into an editable profile', async t => {
   assert.equal(view.profiles[0].model, 'legacy-model')
 
   const migrated = storage.getRecord()
-  assert.equal(migrated.version, 2)
-  assert.equal(migrated.profiles.length, 1)
-  assert.equal(migrated.activeProfileId, 'legacy-default')
+  assert.equal(migrated.version, 3)
+  assert.equal(Object.hasOwn(migrated, 'profiles'), false)
+  assert.equal(Object.hasOwn(migrated, 'activeProfileId'), false)
   assert.equal(JSON.stringify(migrated).includes('sk-legacy-secret'), false)
+
+  const payload = decryptStoredPayload(migrated, 's'.repeat(40))
+  assert.equal(payload.profiles.length, 1)
+  assert.equal(payload.activeProfileId, 'legacy-default')
+  assert.equal(payload.profiles[0].baseURL, 'https://legacy.example.com/v1')
+  assert.equal(payload.profiles[0].apiKey.data.length > 0, true)
 })
 
 test('the persisted profile count is bounded', async t => {
@@ -412,10 +477,9 @@ test('the persisted profile count is bounded', async t => {
   assert.equal(storage.getRecord().profiles.length, 10)
 })
 
-function createMemoryStorage (initialRecord = null) {
+function createMemoryStorage (initialRecord = null, secret = 's'.repeat(40)) {
   let record = initialRecord
   let deleteCount = 0
-  const secret = 's'.repeat(40)
   return {
     options: {
       readStoredConfig: async () => record ? stateFromRecord(record, secret) : null,
@@ -455,13 +519,24 @@ function stateFromRecord (record, secret) {
     }
   }
 
+  const payload = record.version === 3 ? decryptStoredPayload(record, secret) : record
   return {
     source: 'admin',
-    activeProfileId: record.activeProfileId,
-    updatedAt: record.updatedAt,
-    profiles: record.profiles.map(profile => ({
+    activeProfileId: payload.activeProfileId,
+    updatedAt: payload.updatedAt || record.updatedAt,
+    profiles: payload.profiles.map(profile => ({
       ...profile,
-      encryptedApiKey: profile.apiKey
+      encryptedApiKey: profile.apiKey || profile.encryptedApiKey
     }))
+  }
+}
+
+function decryptStoredPayload (record, secret) {
+  const plaintext = decryptSecret(record.payload, secret)
+  if (!plaintext) throw new AIConfigurationError('已保存的 AI 配置无法解密，请填写新的 API Key 后覆盖保存。', 503)
+  try {
+    return JSON.parse(plaintext)
+  } catch {
+    throw new AIConfigurationError('已保存的 AI 配置载荷格式损坏。')
   }
 }
