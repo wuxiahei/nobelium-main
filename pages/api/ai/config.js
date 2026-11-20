@@ -14,7 +14,6 @@ export default async function handler (req, res) {
     console.error(`[ai-config] Public configuration unavailable: ${error.message}`)
     return res.status(503).json({
       enabled: false,
-      model: '',
       displayName: 'AI 助手',
       storage: 'browser-only'
     })

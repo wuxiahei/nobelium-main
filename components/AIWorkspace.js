@@ -34,7 +34,7 @@ export default function AIWorkspace () {
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
   const [mobilePanel, setMobilePanel] = useState('chat')
-  const [service, setService] = useState({ enabled: false, displayName: 'AI 助手', model: '' })
+  const [service, setService] = useState({ enabled: false, displayName: 'AI 助手' })
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -216,7 +216,7 @@ export default function AIWorkspace () {
           </div>
           <div className={`ai-service-state ${service.enabled ? 'ai-service-online' : ''}`}>
             {service.enabled ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <ShieldCheck className="h-4 w-4" aria-hidden="true" />}
-            <span>{service.enabled ? `${service.displayName}${service.model ? ` · ${service.model}` : ''}` : '等待管理员配置模型'}</span>
+            <span>{service.enabled ? `${service.displayName} · 可用` : '等待管理员启用 AI 服务'}</span>
           </div>
         </header>
 
@@ -264,7 +264,7 @@ export default function AIWorkspace () {
             rows={3}
             value={input}
             maxLength={12000}
-            placeholder={service.enabled ? '输入问题，Shift + Enter 换行' : '管理员配置模型后即可开始会话'}
+            placeholder={service.enabled ? '输入问题，Shift + Enter 换行' : '管理员启用 AI 服务后即可开始会话'}
             aria-label="输入消息"
             disabled={!service.enabled || loading}
             onChange={event => setInput(event.target.value)}

@@ -77,15 +77,16 @@ The page body can use H2 sections such as `Profile`, `Skills`, `Experience`, `Pr
 
 ## 在后台配置 AI 接口
 
-登录 `/admin` 后，点击右上角 **AI 接口**，可以直接修改服务商的接口协议、接口 URL、模型名称、显示名称和 API Key，不需要为了更换模型重新部署。
+登录 `/admin` 后，点击右上角 **AI 接口**，可以保存最多 10 套服务商配置，并一键切换当前使用的连接，不需要为了更换模型重新部署。每套配置分别保存接口协议、接口 URL、模型名称、内部配置名称、对外显示名称和 API Key；切换时无需重新填写 Key。
 
 - 接口协议支持 `Chat Completions` 与 `Responses`。
 - 接口 URL 填写基础地址，例如 `https://api.openai.com/v1`；不要附加 `/chat/completions` 或 `/responses`，服务端会按所选协议自动拼接。
 - 服务端请求会自动发送 Codex User-Agent。如需适配专用网关，可用 `AI_USER_AGENT` 覆盖默认值。
+- 模型名称、接口 URL、档案标识和 API Key 只对管理员可见；公开配置接口与对话响应不会返回模型名称。访客只会看到单独的“对外显示名称”。
 - API Key 只通过 HTTPS 提交到服务端。保存后使用 AES-256-GCM 加密，并写入与站内图片相同的 Vercel Blob 存储。公共记录中只有 Key 密文；管理员接口只返回“是否已配置”，不会把 Key 回传到浏览器。
-- 留空 API Key 会沿用当前正在使用的 Key；要恢复环境变量配置，可点击 **恢复环境变量配置**。
+- 编辑已有配置时，留空 API Key 会沿用该档案已保存的 Key；新建配置必须填写 Key。要清除后台保存的全部档案并恢复环境变量配置，可点击 **恢复环境变量配置**。
 - 后台保存需要 `BLOB_READ_WRITE_TOKEN`，以及至少 32 字符的 `ADMIN_SESSION_SECRET`。也可以单独设置 `AI_CONFIG_ENCRYPTION_KEY`，避免轮换管理员会话密钥后影响 AI Key。
-- 尚未保存后台配置时，继续读取 `AI_API_KEY`、`AI_BASE_URL`、`AI_API_PROTOCOL`、`AI_MODEL` 和 `AI_DISPLAY_NAME` 环境变量。后台配置保存后优先使用后台配置。
+- 尚未保存后台配置时，继续读取 `AI_API_KEY`、`AI_BASE_URL`、`AI_API_PROTOCOL`、`AI_MODEL` 和 `AI_DISPLAY_NAME` 环境变量。后台保存配置后优先使用当前启用的档案。
 - `AI_TIMEOUT_MS` 和 `AI_MAX_OUTPUT_TOKENS` 仍由环境变量控制。
 
 AI provider variables:

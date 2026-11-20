@@ -4374,8 +4374,245 @@ body {
   margin-top: 0.8rem;
 }
 
+.admin-ai-profiles {
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--ink-line);
+  background: color-mix(in srgb, var(--ink-surface) 64%, transparent);
+}
+
+.admin-ai-profiles-heading,
+.admin-ai-settings-form-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.admin-ai-profiles-heading > div,
+.admin-ai-settings-form-title > div {
+  min-width: 0;
+}
+
+.admin-ai-profiles-heading h3,
+.admin-ai-settings-form-title h3 {
+  margin-top: 0.18rem;
+  font-family: 'Source Serif', ui-serif, Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.admin-ai-profiles-heading p:last-child {
+  margin-top: 0.3rem;
+  color: var(--ink-muted);
+  font-size: 0.69rem;
+  line-height: 1.55;
+}
+
+.admin-ai-profiles-heading .ink-command {
+  flex: none;
+  min-height: 2.15rem;
+  font-size: 0.7rem;
+}
+
+.admin-ai-profile-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.admin-ai-profile-card {
+  min-width: 0;
+  border: 1px solid var(--ink-line);
+  background: var(--ink-paper);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.admin-ai-profile-card.is-active {
+  border-color: var(--ink-accent);
+}
+
+.admin-ai-profile-card.is-editing {
+  box-shadow: inset 3px 0 0 var(--ink-accent);
+}
+
+.admin-ai-profile-main {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  color: inherit;
+  text-align: left;
+}
+
+.admin-ai-profile-main:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.admin-ai-profile-icon {
+  display: inline-grid;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  place-items: center;
+  color: var(--ink-accent);
+  background: var(--ink-accent-soft);
+}
+
+.admin-ai-profile-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-ai-profile-copy strong,
+.admin-ai-profile-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-ai-profile-copy strong {
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.admin-ai-profile-copy small {
+  margin-top: 0.18rem;
+  color: var(--ink-muted);
+  font-size: 0.64rem;
+}
+
+.admin-ai-profile-badge {
+  flex: none;
+  padding: 0.16rem 0.32rem;
+  color: var(--ink-accent);
+  background: var(--ink-accent-soft);
+  font-size: 0.58rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.admin-ai-profile-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  border-top: 1px solid var(--ink-line);
+}
+
+.admin-ai-profile-actions .ink-command {
+  min-height: 1.9rem;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.65rem;
+}
+
+.admin-ai-profile-delete {
+  display: inline-grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  place-items: center;
+  border: 1px solid var(--ink-line);
+  color: var(--ink-muted);
+}
+
+.admin-ai-profile-delete:hover:not(:disabled) {
+  border-color: var(--ink-seal);
+  color: var(--ink-seal);
+}
+
+.admin-ai-profile-delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.admin-ai-profile-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding: 0.8rem;
+  border: 1px dashed var(--ink-line);
+  color: var(--ink-muted);
+}
+
+.admin-ai-profile-empty svg {
+  flex: none;
+  margin-top: 0.08rem;
+  color: var(--ink-accent);
+}
+
+.admin-ai-profile-empty strong,
+.admin-ai-profile-empty span {
+  display: block;
+}
+
+.admin-ai-profile-empty strong {
+  color: var(--ink-main);
+  font-size: 0.76rem;
+}
+
+.admin-ai-profile-empty span {
+  margin-top: 0.22rem;
+  font-size: 0.68rem;
+  line-height: 1.55;
+}
+
+.admin-ai-profiles-limit {
+  margin-top: 0.55rem;
+  color: var(--ink-muted);
+  font-size: 0.64rem;
+  line-height: 1.5;
+}
+
 .admin-ai-settings-form {
   margin-top: 1rem;
+}
+
+.admin-ai-settings-form-title {
+  align-items: center;
+  padding-top: 0.2rem;
+}
+
+.admin-ai-activate-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--ink-line);
+  background: color-mix(in srgb, var(--ink-surface) 55%, transparent);
+  cursor: pointer;
+}
+
+.admin-ai-activate-option input {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.08rem;
+  accent-color: var(--ink-accent);
+}
+
+.admin-ai-activate-option span strong,
+.admin-ai-activate-option span small {
+  display: block;
+}
+
+.admin-ai-activate-option span strong {
+  font-size: 0.72rem;
+}
+
+.admin-ai-activate-option span small {
+  margin-top: 0.18rem;
+  color: var(--ink-muted);
+  font-size: 0.65rem;
+  line-height: 1.5;
 }
 
 .admin-ai-settings-field {
@@ -4515,6 +4752,20 @@ body {
   .admin-ai-settings-row {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .admin-ai-profile-list {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .admin-ai-profiles-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-ai-profiles-heading .ink-command {
+    width: 100%;
   }
 
   .admin-ai-settings-actions {

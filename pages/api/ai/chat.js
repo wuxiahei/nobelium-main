@@ -69,7 +69,7 @@ export default async function handler (req, res) {
       return res.status(502).json({ error: '模型没有返回可显示的内容。' })
     }
 
-    return res.status(200).json({ message: content, model: data.model || aiServerConfig.model })
+    return res.status(200).json({ message: content })
   } catch (error) {
     const message = error.name === 'AbortError'
       ? '模型响应超时，请缩短上下文后重试。'
